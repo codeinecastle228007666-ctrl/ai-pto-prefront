@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { UserWithOrg } from '@/entities/user/types'
+import type { UserWithOrg } from '@/entities/user'
 
 interface AuthState {
   user: UserWithOrg | null

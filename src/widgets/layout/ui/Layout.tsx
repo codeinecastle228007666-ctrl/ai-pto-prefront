@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { Sidebar } from '../Sidebar/Sidebar'
-import { Header } from '../Header/Header'
-import { cn } from '@/shared/lib/utils'
-import { Sheet, SheetContent } from '@/shared/ui/Sheet'
 import { X } from 'lucide-react'
+import { Sheet, SheetContent, cn } from '@/shared'
+import { Sidebar } from '@/widgets/sidebar'
+import { Header } from '@/widgets/header'
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)

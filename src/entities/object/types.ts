@@ -60,13 +60,24 @@ export interface ConstructionObject {
   lastCheckedAt?: string
 }
 
+export type ObjectSortBy =
+  | 'code'
+  | 'name'
+  | 'address'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'readiness'
+  | 'lastCheckedAt'
+
 export interface ObjectListParams {
   page?: number
   limit?: number
   search?: string
   status?: ObjectStatus[]
   objectTypeId?: string
-  sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'readiness' | 'lastCheckedAt'
+  customerOrganizationId?: string
+  contractorOrganizationId?: string
+  sortBy?: ObjectSortBy
   sortOrder?: 'asc' | 'desc'
 }
 

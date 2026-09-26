@@ -1,0 +1,46 @@
+import { FolderKanban, AlertTriangle, CheckCircle, Archive } from 'lucide-react'
+import type { ConstructionObject } from '@/entities/object'
+import { Card, CardContent, Skeleton, cn } from '@/shared'
+
+interface DashboardStatsProps {
+  objects: ConstructionObject[]
+  total: number
+  isLoading?: boolean
+}
+
+export function DashboardStats({ objects, total, isLoading }: DashboardStatsProps) {
+  const activeCount = objects.filter((o) => o.status === 'active').length
+  const completedCount = objects.filter((o) => o.status === 'completed').length
+  const findingsCount = objects.reduce((sum, o) => sum + (o._count?.findings ?? 0), 0)
+
+  const stats = [
+    { name: 'Всего объектов', value: String(total), icon: FolderKanban, color: 'text-blue-600 bg-blue-100' },
+    { name: 'Активных объектов', value: String(activeCount), icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+    { name: 'Замечаний на объектах', value: String(findingsCount), icon: AlertTriangle, color: 'text-red-600 bg-red-100' },
+    { name: 'Завершённых объектов', value: String(completedCount), icon: Archive, color: 'text-amber-600 bg-amber-100' },
+  ]
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {stats.map((stat) => (
+        <Card key={stat.name} className="hover:shadow-md transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-12 mt-1" />
+                ) : (
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                )}
+              </div>
+              <div className={cn('p-3 rounded-full', stat.color)}>
+                <stat.icon className="h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}

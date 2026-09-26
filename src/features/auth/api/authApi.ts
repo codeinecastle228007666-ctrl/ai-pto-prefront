@@ -1,6 +1,5 @@
-import api from '@/shared/api/client'
-import { ENDPOINTS } from '@/shared/api/endpoints'
-import type { UserWithOrg } from '@/entities/user/types'
+import { api, ENDPOINTS } from '@/shared'
+import type { UserWithOrg } from '@/entities/user'
 
 export interface LoginRequest {
   email: string

@@ -1,6 +1,5 @@
-import api from '@/shared/api/client'
-import { ENDPOINTS } from '@/shared/api/endpoints'
-import type { ConstructionObject, ObjectListParams, ObjectListResponse, ObjectType, WorkType, OrganizationRef } from '@/entities/object/types'
+import { api, ENDPOINTS } from '@/shared'
+import type { ConstructionObject, ObjectListParams, ObjectListResponse, ObjectType, WorkType, OrganizationRef } from '@/entities/object'
 
 export const objectsApi = {
   // Список объектов с фильтрами и пагинацией

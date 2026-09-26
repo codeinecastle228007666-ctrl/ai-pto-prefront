@@ -1,7 +1,5 @@
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions, type UseMutationOptions } from '@tanstack/react-query'
-import api from './client'
-import { AxiosError } from 'axios'
-import { ENDPOINTS } from './endpoints'
+import type { AxiosError } from 'axios'
 
 type ApiError = AxiosError<{ message: string }>
 

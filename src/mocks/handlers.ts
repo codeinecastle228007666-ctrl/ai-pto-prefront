@@ -1,5 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
-import type { ConstructionObject, ObjectType, WorkType, OrganizationRef, ObjectStatus } from '@/entities/object/types'
+import type { ConstructionObject, ObjectStatus } from '@/entities/object'
+
 import {
   mockUserWithOrg,
   mockCredentials,
@@ -39,10 +40,13 @@ async function withDelay<T>(fn: () => T): Promise<T> {
 function requireAuth(request: Request) {
   const auth = request.headers.get('Authorization')
   if (!auth?.startsWith('Bearer ')) {
-    throw HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
   }
-  return true
+  return null
 }
+
+// Единая точка проверки авторизации: возвращает 401-ответ или null
+const authed = (request: Request): Response | null => requireAuth(request)
 
 function parseQuery(url: string) {
   const { searchParams } = new URL(url)
@@ -75,12 +79,14 @@ export const handlers = [
   }),
 
   http.post('/api/auth/logout', async ({ request }) => {
-    requireAuth(request)
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
     return withDelay(() => new HttpResponse(null, { status: 204 }))
   }),
 
   http.get('/api/auth/me', async ({ request }) => {
-    requireAuth(request)
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
     return withDelay(() => HttpResponse.json(mockUserWithOrg))
   }),
 
@@ -97,7 +103,9 @@ export const handlers = [
 
   // === OBJECTS ===
   http.get('/api/objects', async ({ request }) => {
-    requireAuth(request)
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
+
     return withDelay(() => {
       const params = parseQuery(request.url)
       let filtered = [...mockObjects]
@@ -118,6 +126,14 @@ export const handlers = [
 
       if (params.objectTypeId) {
         filtered = filtered.filter(o => o.objectTypeId === params.objectTypeId)
+      }
+
+      if (params.customerOrganizationId) {
+        filtered = filtered.filter(o => o.customerOrganizationId === params.customerOrganizationId)
+      }
+
+      if (params.contractorOrganizationId) {
+        filtered = filtered.filter(o => o.contractorOrganizationId === params.contractorOrganizationId)
       }
 
       const sortBy = String(params.sortBy || 'updatedAt')
@@ -148,7 +164,9 @@ export const handlers = [
   }),
 
   http.post('/api/objects', async ({ request }) => {
-    requireAuth(request)
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
+
     return withDelay(async () => {
       const body = (await request.json()) as CreateObjectInput
       const newObject: ConstructionObject = {
@@ -169,10 +187,10 @@ export const handlers = [
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         archivedAt: undefined,
-        workTypes: mockWorkTypes.filter(wt => body.workTypeIds.includes(wt.id)),
-        objectType: mockObjectTypes.find(ot => ot.id === body.objectTypeId)!,
-        customerOrganization: mockOrganizations.find(o => o.id === body.customerOrganizationId)!,
-        contractorOrganization: mockOrganizations.find(o => o.id === body.contractorOrganizationId)!,
+        workTypes: mockWorkTypes.filter(wt => body.workTypeIds?.includes(wt.id)),
+        objectType: mockObjectTypes.find(ot => ot.id === body.objectTypeId),
+        customerOrganization: mockOrganizations.find(o => o.id === body.customerOrganizationId),
+        contractorOrganization: mockOrganizations.find(o => o.id === body.contractorOrganizationId),
         _count: { packages: 0, findings: 0 },
         readiness: 0,
         lastCheckedAt: undefined,
@@ -182,7 +200,10 @@ export const handlers = [
     })
   }),
 
-  http.get('/api/objects/:id', async ({ params }) => {
+  http.get('/api/objects/:id', async ({ request, params }) => {
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
+
     return withDelay(() => {
       const object = mockObjects.find(o => o.id === params.id)
       if (!object) {
@@ -192,8 +213,10 @@ export const handlers = [
     })
   }),
 
-  http.patch('/api/objects/:id', async ({ params, request }) => {
-    requireAuth(request)
+  http.patch('/api/objects/:id', async ({ request, params }) => {
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
+
     return withDelay(async () => {
       const body = (await request.json()) as UpdateObjectInput
       const index = mockObjects.findIndex(o => o.id === params.id)
@@ -202,8 +225,7 @@ export const handlers = [
       }
       const existing = mockObjects[index]!
       const updated: ConstructionObject = {
-        id: existing.id,
-        organizationId: existing.organizationId,
+        ...existing,
         code: body.code ?? existing.code,
         name: body.name ?? existing.name,
         address: body.address ?? existing.address,
@@ -214,34 +236,29 @@ export const handlers = [
         description: body.description ?? existing.description,
         startDate: body.startDate ?? existing.startDate,
         plannedEndDate: body.plannedEndDate ?? existing.plannedEndDate,
-        actualEndDate: existing.actualEndDate,
-        createdById: existing.createdById,
-        createdAt: existing.createdAt,
         updatedAt: new Date().toISOString(),
-        archivedAt: existing.archivedAt,
         workTypes: body.workTypeIds
           ? mockWorkTypes.filter(wt => body.workTypeIds!.includes(wt.id))
           : existing.workTypes,
         objectType: body.objectTypeId
-          ? mockObjectTypes.find(ot => ot.id === body.objectTypeId)!
+          ? mockObjectTypes.find(ot => ot.id === body.objectTypeId)
           : existing.objectType,
         customerOrganization: body.customerOrganizationId
-          ? mockOrganizations.find(o => o.id === body.customerOrganizationId)!
+          ? mockOrganizations.find(o => o.id === body.customerOrganizationId)
           : existing.customerOrganization,
         contractorOrganization: body.contractorOrganizationId
-          ? mockOrganizations.find(o => o.id === body.contractorOrganizationId)!
+          ? mockOrganizations.find(o => o.id === body.contractorOrganizationId)
           : existing.contractorOrganization,
-        _count: existing._count,
-        readiness: existing.readiness,
-        lastCheckedAt: existing.lastCheckedAt,
       }
       mockObjects[index] = updated
       return HttpResponse.json(updated)
     })
   }),
 
-  http.delete('/api/objects/:id', async ({ params, request }) => {
-    requireAuth(request)
+  http.delete('/api/objects/:id', async ({ request, params }) => {
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
+
     return withDelay(() => {
       const index = mockObjects.findIndex(o => o.id === params.id)
       if (index === -1) {
@@ -259,15 +276,21 @@ export const handlers = [
   }),
 
   // === CATALOGS ===
-  http.get('/api/object-types', async () => {
+  http.get('/api/object-types', async ({ request }) => {
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
     return withDelay(() => HttpResponse.json(mockObjectTypes))
   }),
 
-  http.get('/api/work-types', async () => {
+  http.get('/api/work-types', async ({ request }) => {
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
     return withDelay(() => HttpResponse.json(mockWorkTypes))
   }),
 
-  http.get('/api/organizations', async () => {
+  http.get('/api/organizations', async ({ request }) => {
+    const unauthorized = authed(request)
+    if (unauthorized) return unauthorized
     return withDelay(() => HttpResponse.json(mockOrganizations))
   }),
 

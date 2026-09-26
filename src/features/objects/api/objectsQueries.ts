@@ -1,7 +1,7 @@
-import { useApiQuery, useApiMutation, queryKeys } from '@/shared/api/hooks'
-import { objectsApi, catalogsApi } from './objectsApi'
 import { useQueryClient } from '@tanstack/react-query'
-import type { ObjectListParams, ConstructionObject } from '@/entities/object/types'
+import { useApiQuery, useApiMutation, queryKeys } from '@/shared'
+import { objectsApi, catalogsApi } from './objectsApi'
+import type { ConstructionObject, ObjectListParams } from '@/entities/object'
 
 // Список объектов
 export function useObjects(params: ObjectListParams = {}) {

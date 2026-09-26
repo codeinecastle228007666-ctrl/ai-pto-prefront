@@ -1,14 +1,15 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { TooltipProvider } from '@/shared/ui/Tooltip'
+import { TooltipProvider } from '@/shared'
 import { Layout } from '@/widgets'
 import { ProtectedRoute } from './ProtectedRoute'
-import { LoginPage } from '@/pages/LoginPage'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { ObjectsPage } from '@/pages/ObjectsPage'
-import { ObjectDetailPage } from '@/pages/ObjectDetailPage'
-import { ProfilePage } from '@/pages/ProfilePage'
+import { LoginPage } from '@/pages/login'
+import { DashboardPage } from '@/pages/dashboard'
+import { ObjectsPage } from '@/pages/objects'
+import { ObjectDetailPage } from '@/pages/object-detail'
+import { ObjectEditPage } from '@/pages/object-edit'
+import { ProfilePage } from '@/pages/profile'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,6 +32,7 @@ export function AppRouter() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/objects" element={<ObjectsPage />} />
               <Route path="/objects/:id" element={<ObjectDetailPage />} />
+              <Route path="/objects/:id/edit" element={<ObjectEditPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route index element={<Navigate to="/dashboard" replace />} />
             </Route>
@@ -42,5 +44,3 @@ export function AppRouter() {
     </QueryClientProvider>
   )
 }
-
-import { Navigate } from 'react-router-dom'

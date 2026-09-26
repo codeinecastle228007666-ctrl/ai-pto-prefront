@@ -2,12 +2,8 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button } from '@/shared/ui/Button'
-import { Input } from '@/shared/ui/Input'
-import { Label } from '@/shared/ui/Label'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/shared/ui/Card'
-import { Alert, AlertDescription } from '@/shared/ui/Alert'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { Button, Input, Label, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Alert, AlertDescription } from '@/shared'
 import { useAuthStore } from '../model/authStore'
 import { authApi } from '../api/authApi'
 
@@ -23,14 +19,13 @@ export function LoginForm() {
   const location = useLocation()
   const setAuth = useAuthStore((state) => state.setAuth)
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
 
   const from = (location.state as { from?: Location })?.from?.pathname || '/objects'
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -41,22 +36,19 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     setError(null)
-    setIsLoading(true)
     try {
       const response = await authApi.login(data)
       const { user, accessToken, refreshToken } = response
-      
+
       // Сразу пишем в localStorage, чтобы axios interceptor увидел токен
       localStorage.setItem('accessToken', accessToken)
       localStorage.setItem('refreshToken', refreshToken)
-      
+
       setAuth({ user, accessToken, refreshToken })
       navigate(from, { replace: true })
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { message?: string } } }
       setError(axiosError.response?.data?.message || 'Ошибка входа. Проверьте email и пароль.')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -82,7 +74,7 @@ export function LoginForm() {
                 placeholder="ivan@example.com"
                 error={errors.email?.message}
                 {...register('email')}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 autoComplete="email"
               />
             </div>
@@ -94,11 +86,11 @@ export function LoginForm() {
                 placeholder="••••••••"
                 error={errors.password?.message}
                 {...register('password')}
-                disabled={isLoading}
+                disabled={isSubmitting}
                 autoComplete="current-password"
               />
             </div>
-            <Button type="submit" className="w-full" size="lg" loading={isLoading}>
+            <Button type="submit" className="w-full" size="lg" loading={isSubmitting}>
               Войти
             </Button>
           </form>

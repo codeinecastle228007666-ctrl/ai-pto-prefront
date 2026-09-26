@@ -1,22 +1,18 @@
 import { create } from 'zustand'
-import type { ObjectListParams, ObjectStatus } from '@/entities/object/types'
+import type { ObjectListParams, ObjectStatus } from '@/entities/object'
 
-interface ObjectsFilters extends ObjectListParams {
+export interface ObjectsFiltersState extends ObjectListParams {
   search: string
   status: ObjectStatus[]
 }
 
 interface ObjectsState {
-  filters: ObjectsFilters
-  selectedObjectId: string | null
-  viewMode: 'table' | 'cards'
-  setFilters: (filters: Partial<ObjectsFilters>) => void
+  filters: ObjectsFiltersState
+  setFilters: (filters: Partial<ObjectsFiltersState>) => void
   resetFilters: () => void
-  setSelectedObject: (id: string | null) => void
-  setViewMode: (mode: 'table' | 'cards') => void
 }
 
-const defaultFilters: ObjectsFilters = {
+export const DEFAULT_OBJECT_FILTERS: ObjectsFiltersState = {
   search: '',
   status: [],
   page: 1,
@@ -26,18 +22,12 @@ const defaultFilters: ObjectsFilters = {
 }
 
 export const useObjectsStore = create<ObjectsState>((set) => ({
-  filters: defaultFilters,
-  selectedObjectId: null,
-  viewMode: 'table',
+  filters: DEFAULT_OBJECT_FILTERS,
 
   setFilters: (newFilters) =>
     set((state) => ({
-      filters: { ...state.filters, ...newFilters, page: 1 }, // сброс страницы при изменении фильтров
+      filters: { ...state.filters, ...newFilters, ...(newFilters.page ? {} : { page: 1 }) }, // сброс страницы при изменении фильтров
     })),
 
-  resetFilters: () => set({ filters: defaultFilters }),
-
-  setSelectedObject: (id) => set({ selectedObjectId: id }),
-
-  setViewMode: (mode) => set({ viewMode: mode }),
+  resetFilters: () => set({ filters: DEFAULT_OBJECT_FILTERS }),
 }))
