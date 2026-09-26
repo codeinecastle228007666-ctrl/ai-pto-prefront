@@ -1,4 +1,10 @@
-import { useQuery, useMutation, useQueryClient, type UseQueryOptions, type UseMutationOptions } from '@tanstack/react-query'
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryOptions,
+  type UseMutationOptions,
+} from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
 
 type ApiError = AxiosError<{ message: string }>
@@ -7,7 +13,7 @@ type ApiError = AxiosError<{ message: string }>
 export function useApiQuery<T>(
   key: readonly unknown[],
   fetcher: () => Promise<T>,
-  options?: Omit<UseQueryOptions<T, ApiError>, 'queryKey' | 'queryFn'>
+  options?: Omit<UseQueryOptions<T, ApiError>, 'queryKey' | 'queryFn'>,
 ) {
   return useQuery<T, ApiError>({
     queryKey: key,
@@ -19,7 +25,7 @@ export function useApiQuery<T>(
 // Обёртка для useMutation
 export function useApiMutation<TData, TVariables>(
   mutationFn: (variables: TVariables) => Promise<TData>,
-  options?: Omit<UseMutationOptions<TData, ApiError, TVariables>, 'mutationFn'>
+  options?: Omit<UseMutationOptions<TData, ApiError, TVariables>, 'mutationFn'>,
 ) {
   const queryClient = useQueryClient()
   return useMutation<TData, ApiError, TVariables>({

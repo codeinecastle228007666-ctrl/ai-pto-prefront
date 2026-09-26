@@ -1,0 +1,5 @@
+# Handwritten files - must not be reformatted by generate:api runs
+src/shared/api/client.ts
+src/shared/api/endpoints.ts
+src/shared/api/hooks.ts
+src/shared/api/orval-mutator.ts
