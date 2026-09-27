@@ -138,9 +138,18 @@ export const handlers = [
 
       const sortBy = String(params.sortBy || 'updatedAt')
       const sortOrder = String(params.sortOrder || 'desc')
+      // Для сортировки по связям (тип/заказчик/подрядчик) используем имя связанной сущности
+      const sortValue = (o: ConstructionObject): string | number | undefined => {
+        switch (sortBy) {
+          case 'objectTypeId': return o.objectType?.name
+          case 'customerOrganizationId': return o.customerOrganization?.name
+          case 'contractorOrganizationId': return o.contractorOrganization?.name
+          default: return o[sortBy as keyof ConstructionObject] as string | number | undefined
+        }
+      }
       filtered.sort((a, b) => {
-        const aVal = a[sortBy as keyof ConstructionObject]
-        const bVal = b[sortBy as keyof ConstructionObject]
+        const aVal = sortValue(a)
+        const bVal = sortValue(b)
         if (aVal == null || bVal == null) return 0
         if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1
         if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1

@@ -68,6 +68,10 @@ export type ObjectSortBy =
   | 'updatedAt'
   | 'readiness'
   | 'lastCheckedAt'
+  | 'status'
+  | 'objectTypeId'
+  | 'customerOrganizationId'
+  | 'contractorOrganizationId'
 
 export interface ObjectListParams {
   page?: number

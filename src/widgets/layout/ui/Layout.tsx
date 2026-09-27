@@ -11,19 +11,15 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar collapsed={sidebarCollapsed} />
+      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} />
       <div
         className={
           sidebarCollapsed
-            ? 'lg:pl-16 flex flex-col min-h-screen transition-[padding] duration-300'
+            ? 'lg:pl-20 flex flex-col min-h-screen transition-[padding] duration-300'
             : 'lg:pl-64 flex flex-col min-h-screen transition-[padding] duration-300'
         }
       >
-        <Header
-          onMenuClick={() => setMobileOpen(true)}
-          onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
-          sidebarCollapsed={sidebarCollapsed}
-        />
+        <Header onMenuClick={() => setMobileOpen(true)} />
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>

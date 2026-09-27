@@ -78,6 +78,7 @@ export {
   TableCell,
   TableCaption,
 } from './ui/Table'
+export { DataTable } from './ui/DataTable'
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/Tabs'
 export { Textarea } from './ui/Textarea'
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/Tooltip'
