@@ -1,14 +1,12 @@
-import { Bell, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Bell, Menu } from 'lucide-react'
 import { Button } from '@/shared'
 import { useAuthStore } from '@/features/auth'
 
 interface HeaderProps {
   onMenuClick?: () => void
-  onToggleSidebar?: () => void
-  sidebarCollapsed?: boolean
 }
 
-export function Header({ onMenuClick, onToggleSidebar, sidebarCollapsed = false }: HeaderProps) {
+export function Header({ onMenuClick }: HeaderProps) {
   const user = useAuthStore((state) => state.user)
 
   return (
@@ -17,15 +15,6 @@ export function Header({ onMenuClick, onToggleSidebar, sidebarCollapsed = false 
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick} aria-label="Открыть меню">
             <Menu className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hidden lg:inline-flex"
-            onClick={onToggleSidebar}
-            aria-label={sidebarCollapsed ? 'Развернуть сайдбар' : 'Свернуть сайдбар'}
-          >
-            {sidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </Button>
         </div>
         <div className="flex items-center gap-2">

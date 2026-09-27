@@ -1,4 +1,4 @@
-import { LayoutDashboard, FolderKanban, FileText, AlertTriangle, ClipboardCheck, FileBarChart, Settings, LogOut, User, ChevronsUpDown } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, FileText, AlertTriangle, ClipboardCheck, FileBarChart, Settings, LogOut, User, ChevronsUpDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, useLogout } from '@/features/auth'
 import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, Tooltip, TooltipContent, TooltipTrigger, cn } from '@/shared'
@@ -16,9 +16,11 @@ interface SidebarProps {
   collapsed?: boolean
   /** true — рендер внутри мобильного Sheet (относительное позиционирование вместо fixed) */
   embedded?: boolean
+  /** Колбэк переключения сворачивания (кнопка рядом с логотипом) */
+  onToggle?: () => void
 }
 
-export function Sidebar({ collapsed = false, embedded = false }: SidebarProps) {
+export function Sidebar({ collapsed = false, embedded = false, onToggle }: SidebarProps) {
   const user = useAuthStore((state) => state.user)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const navigate = useNavigate()
@@ -27,20 +29,39 @@ export function Sidebar({ collapsed = false, embedded = false }: SidebarProps) {
 
   if (!isAuthenticated) return null
 
+  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose
+
   return (
     <aside
       className={cn(
-        'inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-gray-200 transition-[width] duration-300',
+        'inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-gray-200 transition-[width] duration-300 overflow-hidden',
         embedded ? 'relative h-full flex' : 'fixed hidden lg:flex',
-        collapsed ? 'w-16' : 'w-64'
+        collapsed ? 'w-20' : 'w-64'
       )}
     >
-      <div className={cn('flex h-16 items-center border-b border-gray-200', collapsed ? 'justify-center' : 'justify-between px-4')}>
-        <Link to="/dashboard" className={cn('font-bold text-primary-600', collapsed ? 'text-lg' : 'text-xl')}>
-          {collapsed ? 'AI' : 'AI-ПТО'}
+      {/* Шапка: логотип + кнопка сворачивания рядом. Одинаковая структура в обоих состояниях — без прыжков */}
+      <div className="flex h-16 flex-shrink-0 items-center gap-2 border-b border-gray-200 px-3">
+        <Link
+          to="/dashboard"
+          aria-label="На главную"
+          className="shrink-0 whitespace-nowrap font-bold text-xl leading-none text-primary-600"
+        >
+          <span className={cn('inline-block', collapsed ? 'w-6 overflow-hidden' : 'w-auto')}>
+            {collapsed ? 'AI' : 'AI-ПТО'}
+          </span>
         </Link>
+        {!collapsed && <div className="flex-1" />}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-gray-500 hover:text-gray-900"
+          onClick={onToggle}
+          aria-label={collapsed ? 'Развернуть сайдбар' : 'Свернуть сайдбар'}
+        >
+          <ToggleIcon className="h-5 w-5" />
+        </Button>
       </div>
-      <nav className={cn('flex-1 py-4 space-y-1 overflow-y-auto scrollbar-thin', collapsed ? 'px-2' : 'px-3')}>
+      <nav className={cn('flex-1 py-4 space-y-1 overflow-y-auto scrollbar-thin', collapsed ? 'px-2.5' : 'px-3')}>
         {navigation.map((item) => {
           const isActive = location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href))
           const button = (
