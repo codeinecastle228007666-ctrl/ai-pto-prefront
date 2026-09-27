@@ -94,22 +94,18 @@ export function ObjectsPage() {
     <div className="space-y-6">
       <ObjectsPageHeader onCreate={handleOpenCreate} />
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <ObjectsFilters
-            filters={filters}
-            objectTypes={objectTypes || []}
-            organizations={organizations || []}
-            onChange={setFilters}
-            onReset={resetFilters}
-          />
-        </CardContent>
-      </Card>
-
       {/* Table */}
       <Card>
         <CardContent className="p-0">
+          {/* Search (фильтры — в заголовках столбцов таблицы) */}
+          <div className="px-4 py-3 border-b border-gray-200">
+            <ObjectsFilters
+              filters={filters}
+              onChange={setFilters}
+              onReset={resetFilters}
+            />
+          </div>
+
           <ObjectsTable
             data={objectsData?.data ?? []}
             sorting={sorting}
@@ -118,6 +114,10 @@ export function ObjectsPage() {
             onEditObject={handleEdit}
             onArchiveObject={setObjectToArchive}
             isLoading={isLoading}
+            filters={filters}
+            onFiltersChange={setFilters}
+            objectTypes={objectTypes || []}
+            organizations={organizations || []}
           />
 
           {/* Pagination */}
