@@ -33,7 +33,7 @@ export function Layout() {
 
       {/* Мобильный сайдбар (оверлей, только < lg) */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-[min(100%,16rem)] p-0 sm:w-64">
+        <SheetContent side="left" hideClose className="w-[min(100%,16rem)] p-0 sm:w-64">
           <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-gray-200">
             <span className="text-lg sm:text-xl font-bold text-primary-600">AI-ПТО</span>
             <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} aria-label="Закрыть меню">

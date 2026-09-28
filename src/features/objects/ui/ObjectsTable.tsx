@@ -1,8 +1,9 @@
 import type { SortingState } from '@tanstack/react-table'
 import type { ConstructionObject } from '@/entities/object'
-import { DataTable, RotateLandscapeBanner } from '@/shared'
+import { DataTable, useViewport } from '@/shared'
 import type { ObjectsFiltersState } from '../model/objectsStore'
 import { useObjectsColumns } from '../model/useColumns'
+import { ObjectsMobileList } from './ObjectsMobileList'
 
 interface ObjectsTableProps {
   data: ConstructionObject[]
@@ -19,8 +20,7 @@ interface ObjectsTableProps {
 }
 
 /**
- * Таблица объектов: колонки собираются в хуке useObjectsColumns (columnHelper),
- * рендер — переиспользуемый DataTable из shared.
+ * Таблица объектов: на узких экранах — список карточек, на lg+ — DataTable.
  */
 export function ObjectsTable({
   data,
@@ -35,6 +35,7 @@ export function ObjectsTable({
   objectTypes,
   organizations,
 }: ObjectsTableProps) {
+  const { isNarrow } = useViewport()
   const columns = useObjectsColumns({
     onOpenObject,
     onEditObject,
@@ -45,11 +46,23 @@ export function ObjectsTable({
     organizations,
   })
 
+  if (isNarrow) {
+    return (
+      <div className="min-w-0">
+        <ObjectsMobileList
+          data={data}
+          onOpenObject={onOpenObject}
+          onEditObject={onEditObject}
+          onArchiveObject={onArchiveObject}
+          isLoading={isLoading}
+          emptyText="Объектов не найдено"
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="min-w-0">
-      <div className="px-4 pt-3 sm:px-4">
-        <RotateLandscapeBanner />
-      </div>
       <DataTable
         data={data}
         columns={columns}
