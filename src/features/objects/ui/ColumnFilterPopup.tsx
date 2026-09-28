@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Check, Search } from 'lucide-react'
 import {
   Popover,
   PopoverTrigger,
@@ -126,14 +126,29 @@ export function ColumnFilterPopup({
                     checked && 'bg-primary-50 text-primary-700'
                   )}
                 >
-                  <span
-                    className={cn(
-                      'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border',
-                      checked ? 'border-primary-600' : 'border-gray-300'
-                    )}
-                  >
-                    {checked && <span className="h-2 w-2 rounded-full bg-primary-600" />}
-                  </span>
+                  {multi ? (
+                    <span
+                      className={cn(
+                        'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border',
+                        checked
+                          ? 'border-primary-600 bg-primary-600 text-white'
+                          : 'border-gray-300 bg-white'
+                      )}
+                      aria-hidden
+                    >
+                      {checked && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border',
+                        checked ? 'border-primary-600' : 'border-gray-300'
+                      )}
+                      aria-hidden
+                    >
+                      {checked && <span className="h-2 w-2 rounded-full bg-primary-600" />}
+                    </span>
+                  )}
                   <span className="truncate">{option.label}</span>
                 </button>
               )

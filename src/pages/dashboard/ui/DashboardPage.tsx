@@ -19,10 +19,12 @@ export function DashboardPage() {
 
       <DashboardStats objects={objects} total={data?.total ?? 0} isLoading={isLoading} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <DashboardRecentObjects objects={objects.slice(0, 5)} isLoading={isLoading} />
+      <div className="grid gap-6 min-w-0 lg:grid-cols-2">
+        <div className="min-w-0 w-full">
+          <DashboardRecentObjects objects={objects.slice(0, 5)} isLoading={isLoading} />
+        </div>
 
-        <Card>
+        <Card className="min-w-0 w-full">
           <CardHeader>
             <CardTitle>Незавершённые проверки</CardTitle>
           </CardHeader>

@@ -39,28 +39,30 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
         collapsed ? 'w-20' : 'w-64'
       )}
     >
-      {/* Шапка: логотип + кнопка сворачивания рядом. Одинаковая структура в обоих состояниях — без прыжков */}
-      <div className="flex h-16 flex-shrink-0 items-center gap-2 border-b border-gray-200 px-3">
-        <Link
-          to="/dashboard"
-          aria-label="На главную"
-          className="shrink-0 whitespace-nowrap font-bold text-xl leading-none text-primary-600"
-        >
-          <span className={cn('inline-block', collapsed ? 'w-6 overflow-hidden' : 'w-auto')}>
-            {collapsed ? 'AI' : 'AI-ПТО'}
-          </span>
-        </Link>
-        {!collapsed && <div className="flex-1" />}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0 text-gray-500 hover:text-gray-900"
-          onClick={onToggle}
-          aria-label={collapsed ? 'Развернуть сайдбар' : 'Свернуть сайдбар'}
-        >
-          <ToggleIcon className="h-5 w-5" />
-        </Button>
-      </div>
+      {/* Шапка только на desktop: в mobile Sheet логотип уже в Layout */}
+      {!embedded && (
+        <div className="flex h-16 flex-shrink-0 items-center gap-2 border-b border-gray-200 px-3">
+          <Link
+            to="/dashboard"
+            aria-label="На главную"
+            className="shrink-0 whitespace-nowrap font-bold text-xl leading-none text-primary-600"
+          >
+            <span className={cn('inline-block', collapsed ? 'w-6 overflow-hidden' : 'w-auto')}>
+              {collapsed ? 'AI' : 'AI-ПТО'}
+            </span>
+          </Link>
+          {!collapsed && <div className="flex-1" />}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-gray-500 hover:text-gray-900"
+            onClick={onToggle}
+            aria-label={collapsed ? 'Развернуть сайдбар' : 'Свернуть сайдбар'}
+          >
+            <ToggleIcon className="h-5 w-5" />
+          </Button>
+        </div>
+      )}
       <nav className={cn('flex-1 py-4 space-y-1 overflow-y-auto scrollbar-thin', collapsed ? 'px-2.5' : 'px-3')}>
         {navigation.map((item) => {
           const isActive = location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href))

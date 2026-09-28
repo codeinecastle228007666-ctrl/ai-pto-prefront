@@ -1,15 +1,13 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
-import { MoreVertical } from 'lucide-react'
+import { Archive, Eye, Pencil } from 'lucide-react'
 import type { ConstructionObject } from '@/entities/object'
 import { StatusBadge } from '@/entities/object'
 import {
   Badge,
   Button,
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/shared'
 import type { ObjectsFiltersState } from './objectsStore'
 import { ColumnFilterPopup } from '../ui/ColumnFilterPopup'
@@ -166,25 +164,49 @@ export function useObjectsColumns({
       id: 'actions',
       header: 'Действия',
       cell: ({ row }) => (
-        <div onClick={(e) => e.stopPropagation()}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
+        <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Открыть"
+                onClick={() => onOpenObject(row.original)}
+              >
+                <Eye className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onOpenObject(row.original)}>Открыть</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onEditObject(row.original)}>Редактировать</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-red-600 focus:text-red-600"
+            </TooltipTrigger>
+            <TooltipContent>Открыть</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Редактировать"
+                onClick={() => onEditObject(row.original)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Редактировать</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                aria-label="Архивировать"
                 onClick={() => onArchiveObject(row.original)}
               >
-                Архивировать
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <Archive className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Архивировать</TooltipContent>
+          </Tooltip>
         </div>
       ),
     }),
