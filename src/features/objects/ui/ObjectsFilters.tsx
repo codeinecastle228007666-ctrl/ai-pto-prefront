@@ -19,8 +19,8 @@ export function ObjectsFilters({ filters, onChange, onReset }: ObjectsFiltersPro
     !!filters.contractorOrganizationId
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative flex-1 max-w-md">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="relative flex-1 w-full max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder="Поиск по названию, коду, адресу..."
@@ -40,7 +40,7 @@ export function ObjectsFilters({ filters, onChange, onReset }: ObjectsFiltersPro
         )}
       </div>
       {hasActiveFilters && (
-        <Button variant="ghost" onClick={onReset} className="ml-auto">
+        <Button variant="ghost" onClick={onReset} className="sm:ml-auto w-full sm:w-auto">
           Сбросить
         </Button>
       )}

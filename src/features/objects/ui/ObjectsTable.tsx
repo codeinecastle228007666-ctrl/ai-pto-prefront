@@ -1,6 +1,6 @@
 import type { SortingState } from '@tanstack/react-table'
 import type { ConstructionObject } from '@/entities/object'
-import { DataTable } from '@/shared'
+import { DataTable, RotateLandscapeBanner } from '@/shared'
 import type { ObjectsFiltersState } from '../model/objectsStore'
 import { useObjectsColumns } from '../model/useColumns'
 
@@ -46,22 +46,27 @@ export function ObjectsTable({
   })
 
   return (
-    <DataTable
-      data={data}
-      columns={columns}
-      sorting={sorting}
-      onSortingChange={onSortingChange}
-      manualSorting
-      headerOwnsInteractionColumnIds={[
-        'objectTypeId',
-        'customerOrganizationId',
-        'contractorOrganizationId',
-        'status',
-      ]}
-      getRowId={(row) => row.id}
-      onRowClick={onOpenObject}
-      isLoading={isLoading}
-      emptyText="Объектов не найдено"
-    />
+    <div className="min-w-0">
+      <div className="px-4 pt-3 sm:px-4">
+        <RotateLandscapeBanner />
+      </div>
+      <DataTable
+        data={data}
+        columns={columns}
+        sorting={sorting}
+        onSortingChange={onSortingChange}
+        manualSorting
+        headerOwnsInteractionColumnIds={[
+          'objectTypeId',
+          'customerOrganizationId',
+          'contractorOrganizationId',
+          'status',
+        ]}
+        getRowId={(row) => row.id}
+        onRowClick={onOpenObject}
+        isLoading={isLoading}
+        emptyText="Объектов не найдено"
+      />
+    </div>
   )
 }

@@ -37,22 +37,23 @@ export function ObjectDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <Button variant="outline" size="sm" onClick={() => navigate('/objects')}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => navigate('/objects')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Назад
         </Button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button
             variant="outline"
             size="sm"
+            className="w-full sm:w-auto"
             onClick={() => setShowArchiveDialog(true)}
             disabled={object.status === 'archived'}
           >
             <Archive className="h-4 w-4 mr-2" />
             Архивировать
           </Button>
-          <Button size="sm" onClick={() => navigate(`/objects/${id}/edit`)}>
+          <Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${id}/edit`)}>
             <Edit className="h-4 w-4 mr-2" />
             Редактировать
           </Button>
@@ -64,15 +65,15 @@ export function ObjectDetailPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{object.name}</h1>
-              <div className="flex items-center gap-3 mt-2">
+              <h1 className="text-xl font-bold text-gray-900 sm:text-2xl break-words">{object.name}</h1>
+              <div className="flex flex-wrap items-center gap-2 mt-2 sm:gap-3">
                 <Badge variant="outline">{object.code}</Badge>
                 <StatusBadge status={object.status} />
               </div>
             </div>
             {object.readiness !== undefined && (
-              <div className="text-right">
-                <p className="text-3xl font-bold text-primary-600">{object.readiness}%</p>
+              <div className="text-left sm:text-right">
+                <p className="text-2xl font-bold text-primary-600 sm:text-3xl">{object.readiness}%</p>
                 <p className="text-sm text-gray-500">Готовность</p>
               </div>
             )}
@@ -85,15 +86,17 @@ export function ObjectDetailPage() {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full">
-          <TabsTrigger value="overview">Обзор</TabsTrigger>
-          <TabsTrigger value="documents" disabled>Документы</TabsTrigger>
-          <TabsTrigger value="packages" disabled>Пакеты</TabsTrigger>
-          <TabsTrigger value="findings" disabled>Замечания</TabsTrigger>
-          <TabsTrigger value="checklist" disabled>Комплектность</TabsTrigger>
-          <TabsTrigger value="reports" disabled>Отчёты</TabsTrigger>
-          <TabsTrigger value="history" disabled>История</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <TabsList className="w-max min-w-full sm:w-full">
+            <TabsTrigger value="overview">Обзор</TabsTrigger>
+            <TabsTrigger value="documents" disabled>Документы</TabsTrigger>
+            <TabsTrigger value="packages" disabled>Пакеты</TabsTrigger>
+            <TabsTrigger value="findings" disabled>Замечания</TabsTrigger>
+            <TabsTrigger value="checklist" disabled>Комплектность</TabsTrigger>
+            <TabsTrigger value="reports" disabled>Отчёты</TabsTrigger>
+            <TabsTrigger value="history" disabled>История</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="mt-6 space-y-6">
           <ObjectStatsCard object={object} />

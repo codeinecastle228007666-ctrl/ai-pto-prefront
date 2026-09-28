@@ -53,10 +53,10 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8 sm:py-12">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-gray-900">AI-ПТО</CardTitle>
+        <CardHeader className="text-center px-4 sm:px-6">
+          <CardTitle className="text-xl font-bold text-gray-900 sm:text-2xl">AI-ПТО</CardTitle>
           <CardDescription className="text-gray-500">Войдите в личный кабинет</CardDescription>
         </CardHeader>
         <CardContent>

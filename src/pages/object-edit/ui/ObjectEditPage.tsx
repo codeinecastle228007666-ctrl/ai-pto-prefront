@@ -68,7 +68,7 @@ export function ObjectEditPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={() => navigate(`/objects/${id}`)}>
+        <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${id}`)}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Назад к объекту
         </Button>
@@ -76,7 +76,7 @@ export function ObjectEditPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Редактировать объект</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">Редактировать объект</CardTitle>
         </CardHeader>
         <CardContent>
           <FormProvider {...form}>
@@ -96,11 +96,11 @@ export function ObjectEditPage() {
                 </Alert>
               )}
 
-              <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
-                <Button type="button" variant="outline" onClick={() => navigate(`/objects/${id}`)} disabled={updateMutation.isPending}>
+              <div className="flex flex-col-reverse gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end">
+                <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${id}`)} disabled={updateMutation.isPending}>
                   Отмена
                 </Button>
-                <Button type="submit" loading={updateMutation.isPending}>
+                <Button type="submit" className="w-full sm:w-auto" loading={updateMutation.isPending}>
                   Сохранить
                 </Button>
               </div>
