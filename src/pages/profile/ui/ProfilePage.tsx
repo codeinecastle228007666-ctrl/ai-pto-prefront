@@ -13,26 +13,26 @@ export function ProfilePage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Профиль</h1>
-        <p className="text-gray-500 mt-1">Управление настройками аккаунт</p>
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Профиль</h1>
+        <p className="text-gray-500 mt-1 text-sm sm:text-base">Управление настройками аккаунт</p>
       </div>
 
       {/* Avatar & Basic Info */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-6">
-            <Avatar className="h-20 w-20">
-              <AvatarFallback className="text-2xl bg-primary-600 text-white">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+            <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
+              <AvatarFallback className="text-xl sm:text-2xl bg-primary-600 text-white">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">{user?.name || 'Пользователь'}</h2>
-              <p className="text-gray-500">{user?.email || ''}</p>
-              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                <span className="flex items-center gap-1">
-                  <User className="h-4 w-4" />
-                  {user?.organization?.name || 'Организация не указана'}
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-gray-900 sm:text-xl truncate">{user?.name || 'Пользователь'}</h2>
+              <p className="text-gray-500 truncate">{user?.email || ''}</p>
+              <div className="flex flex-col gap-2 mt-2 text-sm text-gray-500 sm:flex-row sm:items-center sm:gap-4">
+                <span className="flex items-center gap-1 min-w-0">
+                  <User className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{user?.organization?.name || 'Организация не указана'}</span>
                 </span>
                 <Badge variant="outline">{user?.membership?.role || 'engineer'}</Badge>
               </div>
@@ -42,8 +42,8 @@ export function ProfilePage() {
       </Card>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-6" aria-label="Tabs">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <nav className="flex gap-4 sm:gap-6 min-w-max" aria-label="Tabs">
           <button
             onClick={() => setActiveTab('profile')}
             className={cn(

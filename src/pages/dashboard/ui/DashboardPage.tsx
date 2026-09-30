@@ -13,16 +13,18 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Обзор</h1>
-        <p className="text-gray-500 mt-1">Сводка по вашим объектам и проверкам</p>
+        <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Обзор</h1>
+        <p className="text-gray-500 mt-1 text-sm sm:text-base">Сводка по вашим объектам и проверкам</p>
       </div>
 
       <DashboardStats objects={objects} total={data?.total ?? 0} isLoading={isLoading} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <DashboardRecentObjects objects={objects.slice(0, 5)} isLoading={isLoading} />
+      <div className="grid gap-6 min-w-0 lg:grid-cols-2">
+        <div className="min-w-0 w-full">
+          <DashboardRecentObjects objects={objects.slice(0, 5)} isLoading={isLoading} />
+        </div>
 
-        <Card>
+        <Card className="min-w-0 w-full">
           <CardHeader>
             <CardTitle>Незавершённые проверки</CardTitle>
           </CardHeader>

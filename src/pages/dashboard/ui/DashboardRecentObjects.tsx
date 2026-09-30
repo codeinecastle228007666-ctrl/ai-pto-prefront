@@ -10,7 +10,7 @@ interface DashboardRecentObjectsProps {
 
 export function DashboardRecentObjects({ objects, isLoading }: DashboardRecentObjectsProps) {
   return (
-    <Card>
+    <Card className="min-w-0 w-full">
       <CardHeader>
         <CardTitle>Последние объекты</CardTitle>
       </CardHeader>
@@ -34,13 +34,13 @@ export function DashboardRecentObjects({ objects, isLoading }: DashboardRecentOb
               <Link
                 key={obj.id}
                 to={`/objects/${obj.id}`}
-                className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors min-w-0"
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1 basis-[12rem]">
                   <p className="font-medium text-gray-900 truncate">{obj.name}</p>
                   <p className="text-sm text-gray-500 truncate">{obj.objectType?.name || obj.code}</p>
                 </div>
-                <div className="flex items-center gap-4 flex-shrink-0 ml-4">
+                <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
                   <StatusBadge status={obj.status} />
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">{obj.readiness || 0}%</p>
