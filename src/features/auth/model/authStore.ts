@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { UserWithOrg } from '@/entities/user'
+import { clearMockSessionId, setMockSessionId } from '@/shared/api/mockSession'
 
 interface AuthState {
   user: UserWithOrg | null
@@ -20,26 +21,30 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   sessionChecked: false,
 
-  setUser: (user) =>
+  setUser: (user) => {
+    setMockSessionId(user.id)
     set({
       user,
       organizationId: user.membership.organizationId,
       isAuthenticated: true,
       sessionChecked: true,
-    }),
+    })
+  },
 
   updateUser: (userData) =>
     set((state) => ({
       user: state.user ? { ...state.user, ...userData } : null,
     })),
 
-  clearAuth: () =>
+  clearAuth: () => {
+    clearMockSessionId()
     set({
       user: null,
       organizationId: null,
       isAuthenticated: false,
       sessionChecked: true,
-    }),
+    })
+  },
 
   setSessionChecked: (checked) => set({ sessionChecked: checked }),
 

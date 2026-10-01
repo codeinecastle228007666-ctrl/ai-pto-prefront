@@ -2,7 +2,7 @@ import { LayoutDashboard, FolderKanban, User as UserIcon, Settings, LogOut, User
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, useLogout } from '@/features/auth'
 import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, Tooltip, TooltipContent, TooltipTrigger, cn } from '@/shared'
-import logo from '@/assets/logo-ai-pto.jpg'
+import logo from '@/assets/logo-pto-doc.jpg'
 
 const navigation = [
   { name: 'Обзор', href: '/dashboard', icon: LayoutDashboard },
@@ -64,7 +64,7 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
               <img src={logo} alt="" className="h-full w-full scale-125 object-cover" />
             </span>
             {!collapsed && (
-              <span className="text-xl font-bold leading-none text-primary-600">AI-ПТО</span>
+              <span className="text-xl font-bold leading-none text-primary-600">ПТО-Doc</span>
             )}
           </Link>
           {!collapsed && <div className="flex-1" />}

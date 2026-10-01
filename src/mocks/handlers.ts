@@ -45,10 +45,15 @@ async function withDelay<T>(fn: () => T): Promise<T> {
   return fn()
 }
 
-// Мок cookie-сессии: значение cookie — id пользователя.
-// MSW выставляет Set-Cookie мок-ответа в document.cookie (HttpOnly в моках недоступен).
-function sessionUser(cookies: Record<string, string>) {
-  return findMockUserById(cookies[SESSION_COOKIE])
+// Мок cookie-сессии: браузер игнорирует Set-Cookie из Service Worker.
+// Клиент шлёт X-Mock-Session из sessionStorage; плюс module-level fallback в рамках SW.
+let mockSessionUserId: string | null = null
+const MOCK_SESSION_HEADER = 'X-Mock-Session'
+
+function sessionUser(request: Request, cookies: Record<string, string>) {
+  const fromHeader = request.headers.get(MOCK_SESSION_HEADER)
+  const fromCookie = cookies[SESSION_COOKIE]
+  return findMockUserById(fromHeader || fromCookie || mockSessionUserId || undefined)
 }
 
 const unauthorized = () => HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
@@ -78,6 +83,7 @@ export const handlers = [
       const body = (await request.json()) as { email?: string; password?: string }
       const user = findMockUserByEmail(body.email)
       if (user && body.password === MOCK_PASSWORD) {
+        mockSessionUserId = user.id
         return new HttpResponse(null, {
           status: 204,
           headers: { 'Set-Cookie': `${SESSION_COOKIE}=${user.id}; Path=/; SameSite=Lax` },
@@ -88,6 +94,7 @@ export const handlers = [
   }),
 
   http.post('/api/auth/logout', async () => {
+    mockSessionUserId = null
     return withDelay(
       () =>
         new HttpResponse(null, {
@@ -97,15 +104,15 @@ export const handlers = [
     )
   }),
 
-  http.get('/api/auth/me', async ({ cookies }) => {
-    const user = sessionUser(cookies)
+  http.get('/api/auth/me', async ({ request, cookies }) => {
+    const user = sessionUser(request, cookies)
     if (!user) return unauthorized()
     return withDelay(() => HttpResponse.json(user))
   }),
 
   // === OBJECTS ===
   http.get('/api/objects', async ({ request, cookies }) => {
-    if (!sessionUser(cookies)) return unauthorized()
+    if (!sessionUser(request, cookies)) return unauthorized()
 
     return withDelay(() => {
       const params = parseQuery(request.url)
@@ -178,7 +185,7 @@ export const handlers = [
   }),
 
   http.post('/api/objects', async ({ request, cookies }) => {
-    const user = sessionUser(cookies)
+    const user = sessionUser(request, cookies)
     if (!user) return unauthorized()
 
     return withDelay(async () => {
@@ -213,8 +220,8 @@ export const handlers = [
     })
   }),
 
-  http.get('/api/objects/:id', async ({ params, cookies }) => {
-    if (!sessionUser(cookies)) return unauthorized()
+  http.get('/api/objects/:id', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
 
     return withDelay(() => {
       const object = mockObjects.find((o) => o.id === params.id)
@@ -223,7 +230,7 @@ export const handlers = [
   }),
 
   http.patch('/api/objects/:id', async ({ request, params, cookies }) => {
-    if (!sessionUser(cookies)) return unauthorized()
+    if (!sessionUser(request, cookies)) return unauthorized()
 
     return withDelay(async () => {
       const body = (await request.json()) as Partial<ObjectWriteInput>
@@ -264,7 +271,7 @@ export const handlers = [
   }),
 
   http.post('/api/objects/:id/status', async ({ request, params, cookies }) => {
-    if (!sessionUser(cookies)) return unauthorized()
+    if (!sessionUser(request, cookies)) return unauthorized()
 
     return withDelay(async () => {
       const { status } = (await request.json()) as { status: StatusTransition }
@@ -286,8 +293,8 @@ export const handlers = [
     })
   }),
 
-  http.post('/api/objects/:id/archive', async ({ params, cookies }) => {
-    const user = sessionUser(cookies)
+  http.post('/api/objects/:id/archive', async ({ request, params, cookies }) => {
+    const user = sessionUser(request, cookies)
     if (!user) return unauthorized()
     if (user.membership.role !== 'owner') {
       return HttpResponse.json({ message: 'Only owner can archive objects' }, { status: 403 })
@@ -308,18 +315,18 @@ export const handlers = [
   }),
 
   // === CATALOGS ===
-  http.get('/api/object-types', async ({ cookies }) => {
-    if (!sessionUser(cookies)) return unauthorized()
+  http.get('/api/object-types', async ({ request, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
     return withDelay(() => HttpResponse.json(mockObjectTypes))
   }),
 
-  http.get('/api/work-types', async ({ cookies }) => {
-    if (!sessionUser(cookies)) return unauthorized()
+  http.get('/api/work-types', async ({ request, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
     return withDelay(() => HttpResponse.json(mockWorkTypes))
   }),
 
-  http.get('/api/counterparties', async ({ cookies }) => {
-    if (!sessionUser(cookies)) return unauthorized()
+  http.get('/api/counterparties', async ({ request, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
     return withDelay(() => HttpResponse.json(mockCounterparties))
   }),
 

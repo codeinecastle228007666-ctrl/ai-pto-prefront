@@ -1,4 +1,10 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import axios, { type AxiosError } from 'axios'
+import {
+  MOCK_SESSION_HEADER,
+  clearMockSessionId,
+  getMockSessionId,
+  isMockMode,
+} from './mockSession'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -10,7 +16,18 @@ export const api = axios.create({
   withCredentials: true,
 })
 
-// 401 без живой cookie-сессии → на логин (кроме самого login)
+// В моках cookie из SW не сохраняется — шлём userId заголовком из sessionStorage
+api.interceptors.request.use((config) => {
+  if (isMockMode()) {
+    const sessionId = getMockSessionId()
+    if (sessionId) {
+      config.headers.set(MOCK_SESSION_HEADER, sessionId)
+    }
+  }
+  return config
+})
+
+// 401 без живой cookie-сессии → на логин (кроме самого login/me)
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
@@ -19,6 +36,7 @@ api.interceptors.response.use(
     const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/me')
 
     if (status === 401 && !isAuthEndpoint && !window.location.pathname.startsWith('/login')) {
+      if (isMockMode()) clearMockSessionId()
       window.location.href = '/login'
     }
 

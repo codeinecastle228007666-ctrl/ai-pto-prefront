@@ -17,7 +17,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Button variant="ghost" size="icon" className="lg:hidden shrink-0" onClick={onMenuClick} aria-label="Открыть меню">
             <Menu className="h-5 w-5" />
           </Button>
-          <span className="lg:hidden text-base font-bold text-primary-600 truncate">AI-ПТО</span>
+          <span className="lg:hidden text-base font-bold text-primary-600 truncate">ПТО-Doc</span>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 min-w-0">
           {user && <span className="hidden md:block text-sm text-gray-500 truncate max-w-[16rem]">{user.email}</span>}

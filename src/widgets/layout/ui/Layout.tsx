@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 import { Sheet, SheetContent, Button } from '@/shared'
 import { Sidebar } from '@/widgets/sidebar'
 import { Header } from '@/widgets/header'
-import logo from '@/assets/logo-ai-pto.jpg'
+import logo from '@/assets/logo-pto-doc.jpg'
 
 export function Layout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -40,7 +40,7 @@ export function Layout() {
               <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm">
                 <img src={logo} alt="" className="h-full w-full scale-125 object-cover" />
               </span>
-              <span className="text-lg sm:text-xl font-bold text-primary-600 truncate">AI-ПТО</span>
+              <span className="text-lg sm:text-xl font-bold text-primary-600 truncate">ПТО-Doc</span>
             </div>
             <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} aria-label="Закрыть меню">
               <X className="h-5 w-5" />

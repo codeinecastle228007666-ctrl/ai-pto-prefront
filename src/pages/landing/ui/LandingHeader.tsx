@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { Button } from '@/shared'
-import logo from '@/assets/logo-ai-pto.jpg'
+import logo from '@/assets/logo-pto-doc.jpg'
 import { LANDING_NAV_LINKS } from '../model/content'
 
 export function LandingHeader() {
@@ -41,7 +41,7 @@ export function LandingHeader() {
           to="/"
           onClick={handleLogoClick}
           className="flex cursor-pointer items-center gap-2"
-          aria-label="AI-ПТО, на главную"
+          aria-label="ПТО-Doc, на главную"
         >
           <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm">
             <img src={logo} alt="" className="h-full w-full scale-125 object-cover" />
@@ -53,7 +53,7 @@ export function LandingHeader() {
                 : 'text-xl font-bold text-white'
             }
           >
-            AI-ПТО
+            ПТО-Doc
           </span>
         </Link>
 

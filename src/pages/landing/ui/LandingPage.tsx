@@ -7,7 +7,7 @@ import { LandingCta } from './LandingCta'
 import { LandingFooter } from './LandingFooter'
 import { BackToTop } from './BackToTop'
 
-/** Публичный лендинг AI-ПТО. */
+/** Публичный лендинг ПТО-Doc. */
 export function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900">
