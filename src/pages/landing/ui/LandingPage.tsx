@@ -5,6 +5,7 @@ import { LandingHowItWorks } from './LandingHowItWorks'
 import { LandingDocuments } from './LandingDocuments'
 import { LandingCta } from './LandingCta'
 import { LandingFooter } from './LandingFooter'
+import { BackToTop } from './BackToTop'
 
 /** Публичный лендинг AI-ПТО. */
 export function LandingPage() {
@@ -19,6 +20,7 @@ export function LandingPage() {
         <LandingCta />
       </main>
       <LandingFooter />
+      <BackToTop />
     </div>
   )
 }
