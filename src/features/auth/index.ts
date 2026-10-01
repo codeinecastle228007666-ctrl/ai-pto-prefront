@@ -1,5 +1,12 @@
 export { authApi } from './api/authApi'
-export type { LoginRequest, LoginResponse } from './api/authApi'
-export { useAuthStore, useUser, useAccessToken, useIsAuthenticated, useOrganizationId } from './model/authStore'
+export type { LoginRequest } from './api/authApi'
+export {
+  useAuthStore,
+  useUser,
+  useIsAuthenticated,
+  useOrganizationId,
+  useIsOwner,
+  ROLE_LABELS,
+} from './model/authStore'
 export { useLogout } from './model/useLogout'
 export { LoginForm } from './ui/LoginForm'

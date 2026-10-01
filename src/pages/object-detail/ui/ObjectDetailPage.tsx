@@ -1,18 +1,28 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import type { AxiosError } from 'axios'
 import { ArrowLeft, Edit, Archive, Loader2 } from 'lucide-react'
-import { useObject, useArchiveObject } from '@/features/objects'
+import {
+  useObject,
+  useArchiveObject,
+  useChangeObjectStatus,
+  STATUS_TRANSITIONS,
+  type ObjectStatusTransition,
+} from '@/features/objects'
+import { useIsOwner } from '@/features/auth'
 import { StatusBadge } from '@/entities/object'
-import { Badge, Button, Card, CardContent, CardHeader, Tabs, TabsList, TabsTrigger, TabsContent, ConfirmDialog } from '@/shared'
+import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, ConfirmDialog } from '@/shared'
 import { ObjectInfoGrid } from './ObjectInfoGrid'
 import { ObjectStatsCard } from './ObjectStatsCard'
-import { formatObjectDate } from '../model/formatObjectDate'
 
 export function ObjectDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const isOwner = useIsOwner()
   const archiveMutation = useArchiveObject()
+  const statusMutation = useChangeObjectStatus()
   const [showArchiveDialog, setShowArchiveDialog] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const { data: object, isLoading, error } = useObject(id || '', !!id)
 
@@ -28,55 +38,94 @@ export function ObjectDetailPage() {
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">Объект не найден</h2>
-        <p className="text-gray-500 mb-4">Объект не существует или был удалён</p>
+        <p className="text-gray-500 mb-4">Объект не существует или недоступен</p>
         <Button onClick={() => navigate('/objects')}>Вернуться к списку</Button>
       </div>
     )
   }
 
+  const isArchived = object.status === 'archived'
+  const transitions = STATUS_TRANSITIONS[object.status] ?? []
+
+  const handleStatus = async (to: ObjectStatusTransition) => {
+    setActionError(null)
+    try {
+      await statusMutation.mutateAsync({ id: object.id, status: to })
+    } catch (err) {
+      const status = (err as AxiosError).response?.status
+      setActionError(status === 409 ? 'Такой переход статуса недоступен.' : 'Не удалось сменить статус.')
+    }
+  }
+
+  const handleArchive = async () => {
+    setActionError(null)
+    try {
+      await archiveMutation.mutateAsync(object.id)
+    } catch {
+      setActionError('Не удалось архивировать объект.')
+    } finally {
+      setShowArchiveDialog(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => navigate('/objects')}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Назад
         </Button>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full sm:w-auto"
-            onClick={() => setShowArchiveDialog(true)}
-            disabled={object.status === 'archived'}
-          >
-            <Archive className="h-4 w-4 mr-2" />
-            Архивировать
-          </Button>
-          <Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${id}/edit`)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Редактировать
-          </Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          {transitions.map((t) => (
+            <Button
+              key={t.to}
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => handleStatus(t.to)}
+              disabled={statusMutation.isPending}
+            >
+              {t.label}
+            </Button>
+          ))}
+          {isOwner && !isArchived && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full sm:w-auto text-red-600 hover:text-red-700"
+              onClick={() => setShowArchiveDialog(true)}
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              Архивировать
+            </Button>
+          )}
+          {!isArchived && (
+            <Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${object.id}/edit`)}>
+              <Edit className="h-4 w-4 mr-2" />
+              Изменить
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Main Info */}
+      {actionError && (
+        <Alert variant="destructive">
+          <AlertDescription>{actionError}</AlertDescription>
+        </Alert>
+      )}
+
+      {isArchived && (
+        <Alert>
+          <AlertDescription>Объект в архиве и доступен только для просмотра.</AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 sm:text-2xl break-words">{object.name}</h1>
-              <div className="flex flex-wrap items-center gap-2 mt-2 sm:gap-3">
-                <Badge variant="outline">{object.code}</Badge>
-                <StatusBadge status={object.status} />
-              </div>
-            </div>
-            {object.readiness !== undefined && (
-              <div className="text-left sm:text-right">
-                <p className="text-2xl font-bold text-primary-600 sm:text-3xl">{object.readiness}%</p>
-                <p className="text-sm text-gray-500">Готовность</p>
-              </div>
-            )}
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl break-words">{object.name}</h1>
+          <div className="flex flex-wrap items-center gap-2 mt-2 sm:gap-3">
+            <Badge variant="outline">{object.code}</Badge>
+            <StatusBadge status={object.status} />
           </div>
         </CardHeader>
         <CardContent>
@@ -84,39 +133,14 @@ export function ObjectDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
-        <div className="overflow-x-auto -mx-1 px-1">
-          <TabsList className="w-max min-w-full sm:w-full">
-            <TabsTrigger value="overview">Обзор</TabsTrigger>
-            <TabsTrigger value="documents" disabled>Документы</TabsTrigger>
-            <TabsTrigger value="packages" disabled>Пакеты</TabsTrigger>
-            <TabsTrigger value="findings" disabled>Замечания</TabsTrigger>
-            <TabsTrigger value="checklist" disabled>Комплектность</TabsTrigger>
-            <TabsTrigger value="reports" disabled>Отчёты</TabsTrigger>
-            <TabsTrigger value="history" disabled>История</TabsTrigger>
-          </TabsList>
-        </div>
+      <ObjectStatsCard object={object} />
 
-        <TabsContent value="overview" className="mt-6 space-y-6">
-          <ObjectStatsCard object={object} />
-        </TabsContent>
-
-        <TabsContent value="documents" className="mt-6">
-          <div className="text-center py-12 text-gray-500">Раздел в разработке</div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Archive Confirm Dialog */}
       <ConfirmDialog
         isOpen={showArchiveDialog}
         onClose={() => setShowArchiveDialog(false)}
-        onConfirm={() => {
-          if (id) archiveMutation.mutate(id)
-          setShowArchiveDialog(false)
-        }}
+        onConfirm={handleArchive}
         title="Архивировать объект?"
-        description="Объект будет перемещён в архив. Документы и отчёты сохранятся."
+        description="Объект станет доступен только для просмотра. Это действие нельзя отменить."
         confirmText="Архивировать"
         variant="destructive"
         isLoading={archiveMutation.isPending}

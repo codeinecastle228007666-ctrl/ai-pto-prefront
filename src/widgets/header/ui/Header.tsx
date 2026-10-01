@@ -1,13 +1,14 @@
-import { Bell, Menu } from 'lucide-react'
+import { LogOut, Menu } from 'lucide-react'
 import { Button } from '@/shared'
-import { useAuthStore } from '@/features/auth'
+import { useUser, useLogout } from '@/features/auth'
 
 interface HeaderProps {
   onMenuClick?: () => void
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const user = useAuthStore((state) => state.user)
+  const user = useUser()
+  const logoutMutation = useLogout()
 
   return (
     <header className="sticky top-0 z-40 h-14 sm:h-16 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-b border-gray-200">
@@ -18,13 +19,18 @@ export function Header({ onMenuClick }: HeaderProps) {
           </Button>
           <span className="lg:hidden text-base font-bold text-primary-600 truncate">AI-ПТО</span>
         </div>
-        <div className="flex items-center gap-1 sm:gap-2">
-          {user && <span className="hidden md:block text-sm text-gray-500 truncate max-w-[12rem]">{user.name}</span>}
-          <Button variant="ghost" size="icon" className="relative shrink-0" aria-label="Уведомления">
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-              3
-            </span>
+        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+          {user && <span className="hidden md:block text-sm text-gray-500 truncate max-w-[16rem]">{user.email}</span>}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+            aria-label="Выйти"
+          >
+            <LogOut className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Выйти</span>
           </Button>
         </div>
       </div>

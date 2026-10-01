@@ -1,15 +1,13 @@
-import { LayoutDashboard, FolderKanban, FileText, AlertTriangle, ClipboardCheck, FileBarChart, Settings, LogOut, User, ChevronsUpDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, User as UserIcon, Settings, LogOut, User, ChevronsUpDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, useLogout } from '@/features/auth'
 import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, Tooltip, TooltipContent, TooltipTrigger, cn } from '@/shared'
+import logo from '@/assets/logo-ai-pto.jpg'
 
 const navigation = [
-  { name: 'Обзор', href: '/dashboard', icon: LayoutDashboard, disabled: false },
-  { name: 'Объекты', href: '/objects', icon: FolderKanban, disabled: false },
-  { name: 'Документы', href: '/documents', icon: FileText, disabled: true },
-  { name: 'Замечания', href: '/findings', icon: AlertTriangle, disabled: true },
-  { name: 'Комплектность', href: '/checklist', icon: ClipboardCheck, disabled: true },
-  { name: 'Отчёты', href: '/reports', icon: FileBarChart, disabled: true },
+  { name: 'Обзор', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Объекты', href: '/objects', icon: FolderKanban },
+  { name: 'Профиль', href: '/profile', icon: UserIcon },
 ]
 
 interface SidebarProps {
@@ -41,15 +39,33 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
     >
       {/* Шапка только на desktop: в mobile Sheet логотип уже в Layout */}
       {!embedded && (
-        <div className="flex h-16 flex-shrink-0 items-center gap-2 border-b border-gray-200 px-3">
+        <div
+          className={cn(
+            'flex-shrink-0 border-b border-gray-200',
+            collapsed
+              ? 'flex flex-col items-center gap-1 px-2 py-2'
+              : 'flex h-16 items-center gap-2 px-3'
+          )}
+        >
           <Link
             to="/dashboard"
             aria-label="На главную"
-            className="shrink-0 whitespace-nowrap font-bold text-xl leading-none text-primary-600"
+            className={cn(
+              'flex items-center gap-2 shrink-0',
+              collapsed && 'justify-center'
+            )}
           >
-            <span className={cn('inline-block', collapsed ? 'w-6 overflow-hidden' : 'w-auto')}>
-              {collapsed ? 'AI' : 'AI-ПТО'}
+            <span
+              className={cn(
+                'flex items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm',
+                collapsed ? 'h-10 w-10' : 'h-9 w-9'
+              )}
+            >
+              <img src={logo} alt="" className="h-full w-full scale-125 object-cover" />
             </span>
+            {!collapsed && (
+              <span className="text-xl font-bold leading-none text-primary-600">AI-ПТО</span>
+            )}
           </Link>
           {!collapsed && <div className="flex-1" />}
           <Button
@@ -65,7 +81,9 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
       )}
       <nav className={cn('flex-1 py-4 space-y-1 overflow-y-auto scrollbar-thin', collapsed ? 'px-2.5' : 'px-3')}>
         {navigation.map((item) => {
-          const isActive = location.pathname === item.href || (item.href !== '/dashboard' && location.pathname.startsWith(item.href))
+          const isActive =
+            location.pathname === item.href ||
+            (item.href !== '/dashboard' && location.pathname.startsWith(item.href))
           const button = (
             <Button
               key={item.name}
@@ -78,12 +96,10 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
                   ? 'bg-primary-50 text-primary-700 hover:bg-primary-100 hover:text-primary-800'
                   : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
               )}
-              onClick={() => !item.disabled && navigate(item.href)}
-              disabled={item.disabled}
+              onClick={() => navigate(item.href)}
             >
               <item.icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
               {!collapsed && <span>{item.name}</span>}
-              {!collapsed && item.disabled && <span className="ml-auto text-xs text-gray-400">Скоро</span>}
             </Button>
           )
 
@@ -92,7 +108,7 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
           return (
             <Tooltip key={item.name}>
               <TooltipTrigger asChild>{button}</TooltipTrigger>
-              <TooltipContent side="right">{item.name}{item.disabled ? ' (скоро)' : ''}</TooltipContent>
+              <TooltipContent side="right">{item.name}</TooltipContent>
             </Tooltip>
           )
         })}

@@ -52,7 +52,7 @@ export const queryKeys = {
   catalogs: {
     objectTypes: ['catalogs', 'objectTypes'] as const,
     workTypes: ['catalogs', 'workTypes'] as const,
-    organizations: ['catalogs', 'organizations'] as const,
+    counterparties: ['catalogs', 'counterparties'] as const,
   },
 }
 

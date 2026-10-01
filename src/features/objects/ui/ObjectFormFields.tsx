@@ -1,15 +1,9 @@
 import { useFormContext, Controller } from 'react-hook-form'
 import { Input, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Badge } from '@/shared'
-import type { ObjectType, WorkType, OrganizationRef, ObjectStatus } from '@/entities/object'
+import type { ObjectType, WorkType, OrganizationRef } from '@/entities/object'
 import type { ObjectFormData } from '../model/objectSchema'
 
-const statusOptions: { value: ObjectStatus; label: string }[] = [
-  { value: 'draft', label: 'Черновик' },
-  { value: 'active', label: 'Активен' },
-  { value: 'on_hold', label: 'На паузе' },
-  { value: 'completed', label: 'Завершён' },
-  { value: 'archived', label: 'В архиве' },
-]
+const NONE = '__none__'
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null
@@ -19,117 +13,45 @@ function FieldError({ message }: { message?: string }) {
 interface ObjectFormFieldsProps {
   objectTypes: ObjectType[]
   workTypes: WorkType[]
-  organizations: OrganizationRef[]
-  isEditing?: boolean
+  counterparties: OrganizationRef[]
 }
 
-// Контролируемые поля формы объекта (используется в модалке и на странице редактирования)
-export function ObjectFormFields({ objectTypes, workTypes, organizations, isEditing }: ObjectFormFieldsProps) {
-  const { register, watch, control, formState: { errors } } = useFormContext<ObjectFormData>()
-  const selectedWorkTypes = watch('workTypeIds') ?? []
+/** Поля формы объекта (создание и редактирование), stage-1. */
+export function ObjectFormFields({ objectTypes, workTypes, counterparties }: ObjectFormFieldsProps) {
+  const { register, control, formState: { errors } } = useFormContext<ObjectFormData>()
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="code">Код *</Label>
-          <Input id="code" error={errors.code?.message} {...register('code')} disabled={isEditing} />
-        </div>
-        <div className="space-y-2">
           <Label htmlFor="name">Название *</Label>
           <Input id="name" error={errors.name?.message} {...register('name')} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="code">Код *</Label>
+          <Input id="code" error={errors.code?.message} {...register('code')} />
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="address">Адрес *</Label>
-        <Input id="address" error={errors.address?.message} {...register('address')} />
-        <FieldError message={errors.address?.message} />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="objectTypeId">Тип объекта *</Label>
-          <Controller
-            control={control}
-            name="objectTypeId"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="objectTypeId">
-                  <SelectValue placeholder="Выберите тип объекта" />
-                </SelectTrigger>
-                <SelectContent>
-                  {objectTypes.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-          <FieldError message={errors.objectTypeId?.message} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">Статус</Label>
-          <Controller
-            control={control}
-            name="status"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Выберите статус" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="customerOrganizationId">Заказчик *</Label>
-          <Controller
-            control={control}
-            name="customerOrganizationId"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="customerOrganizationId">
-                  <SelectValue placeholder="Выберите заказчика" />
-                </SelectTrigger>
-                <SelectContent>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-          <FieldError message={errors.customerOrganizationId?.message} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="contractorOrganizationId">Подрядчик *</Label>
-          <Controller
-            control={control}
-            name="contractorOrganizationId"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="contractorOrganizationId">
-                  <SelectValue placeholder="Выберите подрядчика" />
-                </SelectTrigger>
-                <SelectContent>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-          <FieldError message={errors.contractorOrganizationId?.message} />
-        </div>
+        <Label htmlFor="objectTypeId">Тип объекта *</Label>
+        <Controller
+          control={control}
+          name="objectTypeId"
+          render={({ field }) => (
+            <Select value={field.value || undefined} onValueChange={field.onChange}>
+              <SelectTrigger id="objectTypeId">
+                <SelectValue placeholder="Выберите тип объекта" />
+              </SelectTrigger>
+              <SelectContent>
+                {objectTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        <FieldError message={errors.objectTypeId?.message} />
       </div>
 
       <div className="space-y-2">
@@ -147,10 +69,10 @@ export function ObjectFormFields({ objectTypes, workTypes, organizations, isEdit
                     variant={selected ? 'success' : 'outline'}
                     className="cursor-pointer"
                     onClick={() => {
-                      const newSelection = selected
+                      const next = selected
                         ? (field.value ?? []).filter((id) => id !== wt.id)
                         : [...(field.value ?? []), wt.id]
-                      field.onChange(newSelection)
+                      field.onChange(next)
                     }}
                   >
                     {wt.name}
@@ -161,6 +83,26 @@ export function ObjectFormFields({ objectTypes, workTypes, organizations, isEdit
           )}
         />
         <FieldError message={errors.workTypeIds?.message} />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="address">Адрес</Label>
+        <Input id="address" {...register('address')} />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <CounterpartySelect
+          name="customerOrganizationId"
+          label="Заказчик"
+          placeholder="Не выбран"
+          counterparties={counterparties}
+        />
+        <CounterpartySelect
+          name="contractorOrganizationId"
+          label="Подрядчик"
+          placeholder="Не выбран"
+          counterparties={counterparties}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -178,6 +120,45 @@ export function ObjectFormFields({ objectTypes, workTypes, organizations, isEdit
         <Label htmlFor="description">Описание</Label>
         <Textarea id="description" rows={3} {...register('description')} />
       </div>
+    </div>
+  )
+}
+
+function CounterpartySelect({
+  name,
+  label,
+  placeholder,
+  counterparties,
+}: {
+  name: 'customerOrganizationId' | 'contractorOrganizationId'
+  label: string
+  placeholder: string
+  counterparties: OrganizationRef[]
+}) {
+  const { control } = useFormContext<ObjectFormData>()
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={name}>{label}</Label>
+      <Controller
+        control={control}
+        name={name}
+        render={({ field }) => (
+          <Select
+            value={field.value ? field.value : NONE}
+            onValueChange={(v) => field.onChange(v === NONE ? '' : v)}
+          >
+            <SelectTrigger id={name}>
+              <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>{placeholder}</SelectItem>
+              {counterparties.map((org) => (
+                <SelectItem key={org.id} value={org.id}>{org.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      />
     </div>
   )
 }

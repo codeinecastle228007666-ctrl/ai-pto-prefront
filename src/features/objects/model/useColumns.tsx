@@ -18,10 +18,12 @@ export interface ObjectsColumnActions {
   onOpenObject: (object: ConstructionObject) => void
   onEditObject: (object: ConstructionObject) => void
   onArchiveObject: (object: ConstructionObject) => void
+  /** Архивировать может только owner */
+  canArchive: boolean
   filters: ObjectsFiltersState
   onFiltersChange: (filters: Partial<ObjectsFiltersState>) => void
   objectTypes: { id: string; name: string }[]
-  organizations: { id: string; name: string }[]
+  counterparties: { id: string; name: string }[]
 }
 
 const OBJECT_STATUS_OPTIONS = [
@@ -33,102 +35,99 @@ const OBJECT_STATUS_OPTIONS = [
 ]
 
 /**
- * Все колонки таблицы объектов. Собираются через columnHelper:
- * сортировка (enableSorting) у каждого столбца, фильтры — ColumnFilterPopup в заголовках.
+ * Колонки таблицы объектов (stage-1): название, код, тип, адрес, заказчик, подрядчик, статус, действия.
+ * Сортировка — enableSorting, фильтры — ColumnFilterPopup в заголовках.
  */
 export function useObjectsColumns({
   onOpenObject,
   onEditObject,
   onArchiveObject,
+  canArchive,
   filters,
   onFiltersChange,
   objectTypes,
-  organizations,
+  counterparties,
 }: ObjectsColumnActions): ColumnDef<ConstructionObject, any>[] {
+  const counterpartyOptions = counterparties.map((o) => ({ value: o.id, label: o.name }))
+
   return [
     columnHelper.accessor('name', {
       id: 'name',
       header: 'Название',
       enableSorting: true,
-      cell: ({ row }) => (
-        <div>
-          <div className="font-medium text-gray-900">{row.original.name}</div>
-          <div className="text-xs text-gray-500">{row.original.code}</div>
-        </div>
-      ),
+      cell: ({ row }) => <span className="font-medium text-gray-900">{row.original.name}</span>,
     }),
-    columnHelper.accessor(
-      (row) => row.objectType?.name ?? '',
-      {
-        id: 'objectTypeId',
-        header: () => (
-          <ColumnFilterPopup
-            label="Тип"
-            active={!!filters.objectTypeId}
-            options={objectTypes.map((t) => ({ value: t.id, label: t.name }))}
-            value={filters.objectTypeId ? [filters.objectTypeId] : []}
-            onApply={(values) => onFiltersChange({ objectTypeId: values[0] || undefined })}
-          />
-        ),
-        cell: ({ row }) => (
-          <Badge variant="outline">{row.original.objectType?.name || '—'}</Badge>
-        ),
-        enableSorting: true,
-      }
-    ),
-    columnHelper.accessor('address', {
+    columnHelper.accessor('code', {
+      id: 'code',
+      header: 'Код',
+      enableSorting: true,
+      cell: ({ row }) => <span className="font-mono text-xs text-gray-600">{row.original.code}</span>,
+    }),
+    columnHelper.accessor((row) => row.objectType?.name ?? '', {
+      id: 'objectTypeId',
+      header: () => (
+        <ColumnFilterPopup
+          label="Тип"
+          active={!!filters.objectTypeId}
+          options={objectTypes.map((t) => ({ value: t.id, label: t.name }))}
+          value={filters.objectTypeId ? [filters.objectTypeId] : []}
+          onApply={(values) => onFiltersChange({ objectTypeId: values[0] || undefined })}
+        />
+      ),
+      cell: ({ row }) => <Badge variant="outline">{row.original.objectType?.name || '—'}</Badge>,
+      enableSorting: true,
+    }),
+    columnHelper.accessor((row) => row.address ?? '', {
       id: 'address',
       header: 'Адрес',
       enableSorting: true,
       cell: ({ row }) => (
-        <span className="text-gray-500 block max-w-[200px] truncate">{row.original.address}</span>
+        <span className="text-gray-500 block max-w-[200px] truncate">{row.original.address || '—'}</span>
       ),
     }),
-    columnHelper.accessor(
-      (row) => row.customerOrganization?.name ?? '',
-      {
-        id: 'customerOrganizationId',
-        header: () => (
-          <ColumnFilterPopup
-            label="Заказчик"
-            active={!!filters.customerOrganizationId}
-            options={organizations.map((o) => ({ value: o.id, label: o.name }))}
-            value={filters.customerOrganizationId ? [filters.customerOrganizationId] : []}
-            onApply={(values) => onFiltersChange({ customerOrganizationId: values[0] || undefined })}
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="text-gray-500">{row.original.customerOrganization?.name || '—'}</span>
-        ),
-        enableSorting: true,
-      }
-    ),
-    columnHelper.accessor(
-      (row) => row.contractorOrganization?.name ?? '',
-      {
-        id: 'contractorOrganizationId',
-        header: () => (
-          <ColumnFilterPopup
-            label="Подрядчик"
-            active={!!filters.contractorOrganizationId}
-            options={organizations.map((o) => ({ value: o.id, label: o.name }))}
-            value={filters.contractorOrganizationId ? [filters.contractorOrganizationId] : []}
-            onApply={(values) => onFiltersChange({ contractorOrganizationId: values[0] || undefined })}
-          />
-        ),
-        cell: ({ row }) => (
-          <span className="text-gray-500">{row.original.contractorOrganization?.name || '—'}</span>
-        ),
-        enableSorting: true,
-      }
-    ),
+    columnHelper.accessor((row) => row.customerOrganization?.name ?? '', {
+      id: 'customerOrganizationId',
+      header: () => (
+        <ColumnFilterPopup
+          label="Заказчик"
+          active={!!filters.customerOrganizationId}
+          options={counterpartyOptions}
+          value={filters.customerOrganizationId ? [filters.customerOrganizationId] : []}
+          onApply={(values) => onFiltersChange({ customerOrganizationId: values[0] || undefined })}
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="text-gray-500">{row.original.customerOrganization?.name || '—'}</span>
+      ),
+      enableSorting: true,
+    }),
+    columnHelper.accessor((row) => row.contractorOrganization?.name ?? '', {
+      id: 'contractorOrganizationId',
+      header: () => (
+        <ColumnFilterPopup
+          label="Подрядчик"
+          active={!!filters.contractorOrganizationId}
+          options={counterpartyOptions}
+          value={filters.contractorOrganizationId ? [filters.contractorOrganizationId] : []}
+          onApply={(values) => onFiltersChange({ contractorOrganizationId: values[0] || undefined })}
+        />
+      ),
+      cell: ({ row }) => (
+        <span className="text-gray-500">{row.original.contractorOrganization?.name || '—'}</span>
+      ),
+      enableSorting: true,
+    }),
     columnHelper.accessor('status', {
       id: 'status',
       header: () => (
         <ColumnFilterPopup
           label="Статус"
           active={filters.status.length > 0}
-          options={OBJECT_STATUS_OPTIONS}
+          options={
+            filters.includeArchived
+              ? OBJECT_STATUS_OPTIONS
+              : OBJECT_STATUS_OPTIONS.filter((o) => o.value !== 'archived')
+          }
           value={filters.status}
           multi
           onApply={(values) => onFiltersChange({ status: values as ObjectsFiltersState['status'] })}
@@ -137,78 +136,62 @@ export function useObjectsColumns({
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
       enableSorting: true,
     }),
-    columnHelper.accessor('readiness', {
-      id: 'readiness',
-      header: 'Готовность',
-      enableSorting: true,
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-primary-600 rounded-full" style={{ width: `${row.original.readiness || 0}%` }} />
-          </div>
-          <span className="text-sm text-gray-500">{row.original.readiness || 0}%</span>
-        </div>
-      ),
-    }),
-    columnHelper.accessor('lastCheckedAt', {
-      id: 'lastCheckedAt',
-      header: 'Проверено',
-      enableSorting: true,
-      cell: ({ row }) => (
-        <span className="text-sm text-gray-500">
-          {row.original.lastCheckedAt ? new Date(row.original.lastCheckedAt).toLocaleDateString('ru-RU') : '—'}
-        </span>
-      ),
-    }),
     columnHelper.display({
       id: 'actions',
       header: 'Действия',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                aria-label="Открыть"
-                onClick={() => onOpenObject(row.original)}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Открыть</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                aria-label="Редактировать"
-                onClick={() => onEditObject(row.original)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Редактировать</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                aria-label="Архивировать"
-                onClick={() => onArchiveObject(row.original)}
-              >
-                <Archive className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Архивировать</TooltipContent>
-          </Tooltip>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const isArchived = row.original.status === 'archived'
+        return (
+          <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Открыть"
+                  onClick={() => onOpenObject(row.original)}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Открыть</TooltipContent>
+            </Tooltip>
+            {!isArchived && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label="Изменить"
+                    onClick={() => onEditObject(row.original)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Изменить</TooltipContent>
+              </Tooltip>
+            )}
+            {canArchive && !isArchived && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    aria-label="Архивировать"
+                    onClick={() => onArchiveObject(row.original)}
+                  >
+                    <Archive className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Архивировать</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        )
+      },
     }),
   ]
 }

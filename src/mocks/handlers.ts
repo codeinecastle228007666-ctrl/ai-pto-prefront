@@ -2,33 +2,41 @@ import { http, HttpResponse, delay } from 'msw'
 import type { ConstructionObject, ObjectStatus } from '@/entities/object'
 
 import {
-  mockUserWithOrg,
-  mockCredentials,
-  generateTokens,
+  SESSION_COOKIE,
+  MOCK_PASSWORD,
+  findMockUserByEmail,
+  findMockUserById,
 } from './data/auth'
 import {
   mockObjects,
   mockObjectTypes,
   mockWorkTypes,
-  mockOrganizations,
+  mockCounterparties,
   resetMockObjects,
 } from './data/objects'
 
-interface CreateObjectInput {
+interface ObjectWriteInput {
   code: string
   name: string
-  address: string
   objectTypeId: string
-  customerOrganizationId: string
-  contractorOrganizationId: string
-  status?: ObjectStatus
+  workTypeIds: string[]
+  address?: string
+  customerOrganizationId?: string
+  contractorOrganizationId?: string
   description?: string
   startDate?: string
   plannedEndDate?: string
-  workTypeIds: string[]
 }
 
-interface UpdateObjectInput extends Partial<CreateObjectInput> {}
+type StatusTransition = Exclude<ObjectStatus, 'archived'>
+
+const ALLOWED_TRANSITIONS: Record<ObjectStatus, StatusTransition[]> = {
+  draft: ['active'],
+  active: ['on_hold', 'completed'],
+  on_hold: ['active', 'completed'],
+  completed: [],
+  archived: [],
+}
 
 const DELAY = 300
 
@@ -37,23 +45,22 @@ async function withDelay<T>(fn: () => T): Promise<T> {
   return fn()
 }
 
-function requireAuth(request: Request) {
-  const auth = request.headers.get('Authorization')
-  if (!auth?.startsWith('Bearer ')) {
-    return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-  }
-  return null
+// Мок cookie-сессии: значение cookie — id пользователя.
+// MSW выставляет Set-Cookie мок-ответа в document.cookie (HttpOnly в моках недоступен).
+function sessionUser(cookies: Record<string, string>) {
+  return findMockUserById(cookies[SESSION_COOKIE])
 }
 
-// Единая точка проверки авторизации: возвращает 401-ответ или null
-const authed = (request: Request): Response | null => requireAuth(request)
+const unauthorized = () => HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+const notFound = () => HttpResponse.json({ message: 'Object not found' }, { status: 404 })
 
 function parseQuery(url: string) {
   const { searchParams } = new URL(url)
   const params: Record<string, string | string[]> = {}
   searchParams.forEach((value, key) => {
-    if (params[key]) {
-      params[key] = Array.isArray(params[key]) ? [...params[key], value] : [params[key], value]
+    const prev = params[key]
+    if (prev !== undefined) {
+      params[key] = Array.isArray(prev) ? [...prev, value] : [prev, value]
     } else {
       params[key] = value
     }
@@ -61,79 +68,78 @@ function parseQuery(url: string) {
   return params
 }
 
+const codeTaken = (code: string, exceptId?: string) =>
+  mockObjects.some((o) => o.code.toLowerCase() === code.toLowerCase() && o.id !== exceptId)
+
 export const handlers = [
-  // === AUTH ===
+  // === AUTH (cookie-сессия) ===
   http.post('/api/auth/login', async ({ request }) => {
     return withDelay(async () => {
       const body = (await request.json()) as { email?: string; password?: string }
-      if (body.email === mockCredentials.email && body.password === mockCredentials.password) {
-        const tokens = generateTokens()
-        return HttpResponse.json({
-          user: mockUserWithOrg,
-          accessToken: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
+      const user = findMockUserByEmail(body.email)
+      if (user && body.password === MOCK_PASSWORD) {
+        return new HttpResponse(null, {
+          status: 204,
+          headers: { 'Set-Cookie': `${SESSION_COOKIE}=${user.id}; Path=/; SameSite=Lax` },
         })
       }
       return HttpResponse.json({ message: 'Неверный email или пароль' }, { status: 401 })
     })
   }),
 
-  http.post('/api/auth/logout', async ({ request }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
-    return withDelay(() => new HttpResponse(null, { status: 204 }))
+  http.post('/api/auth/logout', async () => {
+    return withDelay(
+      () =>
+        new HttpResponse(null, {
+          status: 204,
+          headers: { 'Set-Cookie': `${SESSION_COOKIE}=; Path=/; Max-Age=0` },
+        })
+    )
   }),
 
-  http.get('/api/auth/me', async ({ request }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
-    return withDelay(() => HttpResponse.json(mockUserWithOrg))
-  }),
-
-  http.post('/api/auth/refresh', async ({ request }) => {
-    return withDelay(async () => {
-      const body = (await request.json()) as { refreshToken?: string }
-      if (body.refreshToken?.startsWith('mock-refresh-token-')) {
-        const tokens = generateTokens()
-        return HttpResponse.json(tokens)
-      }
-      return HttpResponse.json({ message: 'Invalid refresh token' }, { status: 401 })
-    })
+  http.get('/api/auth/me', async ({ cookies }) => {
+    const user = sessionUser(cookies)
+    if (!user) return unauthorized()
+    return withDelay(() => HttpResponse.json(user))
   }),
 
   // === OBJECTS ===
-  http.get('/api/objects', async ({ request }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
+  http.get('/api/objects', async ({ request, cookies }) => {
+    if (!sessionUser(cookies)) return unauthorized()
 
     return withDelay(() => {
       const params = parseQuery(request.url)
       let filtered = [...mockObjects]
 
+      if (params.includeArchived !== 'true') {
+        filtered = filtered.filter((o) => o.status !== 'archived')
+      }
+
       if (params.search) {
         const search = String(params.search).toLowerCase()
-        filtered = filtered.filter(o =>
-          o.name.toLowerCase().includes(search) ||
-          o.code.toLowerCase().includes(search) ||
-          o.address.toLowerCase().includes(search)
+        filtered = filtered.filter(
+          (o) =>
+            o.name.toLowerCase().includes(search) ||
+            o.code.toLowerCase().includes(search) ||
+            (o.address ?? '').toLowerCase().includes(search)
         )
       }
 
       if (params.status) {
         const statuses = Array.isArray(params.status) ? params.status : [params.status]
-        filtered = filtered.filter(o => statuses.includes(o.status as ObjectStatus))
+        filtered = filtered.filter((o) => statuses.includes(o.status))
       }
 
       if (params.objectTypeId) {
-        filtered = filtered.filter(o => o.objectTypeId === params.objectTypeId)
+        filtered = filtered.filter((o) => o.objectTypeId === params.objectTypeId)
       }
 
       if (params.customerOrganizationId) {
-        filtered = filtered.filter(o => o.customerOrganizationId === params.customerOrganizationId)
+        filtered = filtered.filter((o) => o.customerOrganizationId === params.customerOrganizationId)
       }
 
       if (params.contractorOrganizationId) {
-        filtered = filtered.filter(o => o.contractorOrganizationId === params.contractorOrganizationId)
+        filtered = filtered.filter((o) => o.contractorOrganizationId === params.contractorOrganizationId)
       }
 
       const sortBy = String(params.sortBy || 'updatedAt')
@@ -159,8 +165,7 @@ export const handlers = [
       const page = parseInt(String(params.page || '1'))
       const limit = parseInt(String(params.limit || '20'))
       const start = (page - 1) * limit
-      const end = start + limit
-      const paginated = filtered.slice(start, end)
+      const paginated = filtered.slice(start, start + limit)
 
       return HttpResponse.json({
         data: paginated,
@@ -172,135 +177,150 @@ export const handlers = [
     })
   }),
 
-  http.post('/api/objects', async ({ request }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
+  http.post('/api/objects', async ({ request, cookies }) => {
+    const user = sessionUser(cookies)
+    if (!user) return unauthorized()
 
     return withDelay(async () => {
-      const body = (await request.json()) as CreateObjectInput
+      const body = (await request.json()) as ObjectWriteInput
+      if (codeTaken(body.code)) {
+        return HttpResponse.json({ message: 'Object code already exists' }, { status: 409 })
+      }
+      const now = new Date().toISOString()
       const newObject: ConstructionObject = {
         id: `obj-${Date.now()}`,
-        organizationId: 'org-1',
+        organizationId: user.membership.organizationId,
         code: body.code,
         name: body.name,
         address: body.address,
         objectTypeId: body.objectTypeId,
         customerOrganizationId: body.customerOrganizationId,
         contractorOrganizationId: body.contractorOrganizationId,
-        status: body.status ?? 'draft',
+        status: 'draft',
         description: body.description,
         startDate: body.startDate,
         plannedEndDate: body.plannedEndDate,
-        actualEndDate: undefined,
-        createdById: 'user-1',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        archivedAt: undefined,
-        workTypes: mockWorkTypes.filter(wt => body.workTypeIds?.includes(wt.id)),
-        objectType: mockObjectTypes.find(ot => ot.id === body.objectTypeId),
-        customerOrganization: mockOrganizations.find(o => o.id === body.customerOrganizationId),
-        contractorOrganization: mockOrganizations.find(o => o.id === body.contractorOrganizationId),
-        _count: { packages: 0, findings: 0 },
-        readiness: 0,
-        lastCheckedAt: undefined,
+        createdById: user.id,
+        createdAt: now,
+        updatedAt: now,
+        workTypes: mockWorkTypes.filter((wt) => body.workTypeIds?.includes(wt.id)),
+        objectType: mockObjectTypes.find((ot) => ot.id === body.objectTypeId),
+        customerOrganization: mockCounterparties.find((o) => o.id === body.customerOrganizationId),
+        contractorOrganization: mockCounterparties.find((o) => o.id === body.contractorOrganizationId),
       }
       mockObjects.unshift(newObject)
       return HttpResponse.json(newObject, { status: 201 })
     })
   }),
 
-  http.get('/api/objects/:id', async ({ request, params }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
+  http.get('/api/objects/:id', async ({ params, cookies }) => {
+    if (!sessionUser(cookies)) return unauthorized()
 
     return withDelay(() => {
-      const object = mockObjects.find(o => o.id === params.id)
-      if (!object) {
-        return HttpResponse.json({ message: 'Object not found' }, { status: 404 })
-      }
-      return HttpResponse.json(object)
+      const object = mockObjects.find((o) => o.id === params.id)
+      return object ? HttpResponse.json(object) : notFound()
     })
   }),
 
-  http.patch('/api/objects/:id', async ({ request, params }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
+  http.patch('/api/objects/:id', async ({ request, params, cookies }) => {
+    if (!sessionUser(cookies)) return unauthorized()
 
     return withDelay(async () => {
-      const body = (await request.json()) as UpdateObjectInput
-      const index = mockObjects.findIndex(o => o.id === params.id)
-      if (index === -1) {
-        return HttpResponse.json({ message: 'Object not found' }, { status: 404 })
-      }
+      const body = (await request.json()) as Partial<ObjectWriteInput>
+      const index = mockObjects.findIndex((o) => o.id === params.id)
+      if (index === -1) return notFound()
       const existing = mockObjects[index]!
+      if (existing.status === 'archived') {
+        return HttpResponse.json({ message: 'Archived object is read-only' }, { status: 409 })
+      }
+      if (body.code && codeTaken(body.code, existing.id)) {
+        return HttpResponse.json({ message: 'Object code already exists' }, { status: 409 })
+      }
+      const customerId = 'customerOrganizationId' in body ? body.customerOrganizationId : existing.customerOrganizationId
+      const contractorId = 'contractorOrganizationId' in body ? body.contractorOrganizationId : existing.contractorOrganizationId
+      const objectTypeId = body.objectTypeId ?? existing.objectTypeId
       const updated: ConstructionObject = {
         ...existing,
         code: body.code ?? existing.code,
         name: body.name ?? existing.name,
-        address: body.address ?? existing.address,
-        objectTypeId: body.objectTypeId ?? existing.objectTypeId,
-        customerOrganizationId: body.customerOrganizationId ?? existing.customerOrganizationId,
-        contractorOrganizationId: body.contractorOrganizationId ?? existing.contractorOrganizationId,
-        status: body.status ?? existing.status,
-        description: body.description ?? existing.description,
-        startDate: body.startDate ?? existing.startDate,
-        plannedEndDate: body.plannedEndDate ?? existing.plannedEndDate,
+        address: 'address' in body ? body.address : existing.address,
+        objectTypeId,
+        customerOrganizationId: customerId,
+        contractorOrganizationId: contractorId,
+        description: 'description' in body ? body.description : existing.description,
+        startDate: 'startDate' in body ? body.startDate : existing.startDate,
+        plannedEndDate: 'plannedEndDate' in body ? body.plannedEndDate : existing.plannedEndDate,
         updatedAt: new Date().toISOString(),
         workTypes: body.workTypeIds
-          ? mockWorkTypes.filter(wt => body.workTypeIds!.includes(wt.id))
+          ? mockWorkTypes.filter((wt) => body.workTypeIds!.includes(wt.id))
           : existing.workTypes,
-        objectType: body.objectTypeId
-          ? mockObjectTypes.find(ot => ot.id === body.objectTypeId)
-          : existing.objectType,
-        customerOrganization: body.customerOrganizationId
-          ? mockOrganizations.find(o => o.id === body.customerOrganizationId)
-          : existing.customerOrganization,
-        contractorOrganization: body.contractorOrganizationId
-          ? mockOrganizations.find(o => o.id === body.contractorOrganizationId)
-          : existing.contractorOrganization,
+        objectType: mockObjectTypes.find((ot) => ot.id === objectTypeId),
+        customerOrganization: mockCounterparties.find((o) => o.id === customerId),
+        contractorOrganization: mockCounterparties.find((o) => o.id === contractorId),
       }
       mockObjects[index] = updated
       return HttpResponse.json(updated)
     })
   }),
 
-  http.delete('/api/objects/:id', async ({ request, params }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
+  http.post('/api/objects/:id/status', async ({ request, params, cookies }) => {
+    if (!sessionUser(cookies)) return unauthorized()
+
+    return withDelay(async () => {
+      const { status } = (await request.json()) as { status: StatusTransition }
+      const index = mockObjects.findIndex((o) => o.id === params.id)
+      if (index === -1) return notFound()
+      const existing = mockObjects[index]!
+      if (!ALLOWED_TRANSITIONS[existing.status].includes(status)) {
+        return HttpResponse.json({ message: 'Status transition not allowed' }, { status: 409 })
+      }
+      const now = new Date().toISOString()
+      const updated: ConstructionObject = {
+        ...existing,
+        status,
+        actualEndDate: status === 'completed' ? now : existing.actualEndDate,
+        updatedAt: now,
+      }
+      mockObjects[index] = updated
+      return HttpResponse.json(updated)
+    })
+  }),
+
+  http.post('/api/objects/:id/archive', async ({ params, cookies }) => {
+    const user = sessionUser(cookies)
+    if (!user) return unauthorized()
+    if (user.membership.role !== 'owner') {
+      return HttpResponse.json({ message: 'Only owner can archive objects' }, { status: 403 })
+    }
 
     return withDelay(() => {
-      const index = mockObjects.findIndex(o => o.id === params.id)
-      if (index === -1) {
-        return HttpResponse.json({ message: 'Object not found' }, { status: 404 })
-      }
+      const index = mockObjects.findIndex((o) => o.id === params.id)
+      if (index === -1) return notFound()
       const existing = mockObjects[index]!
-      mockObjects[index] = {
-        ...existing,
-        status: 'archived',
-        archivedAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      if (existing.status === 'archived') {
+        return HttpResponse.json({ message: 'Object already archived' }, { status: 409 })
       }
-      return new HttpResponse(null, { status: 204 })
+      const now = new Date().toISOString()
+      const updated: ConstructionObject = { ...existing, status: 'archived', archivedAt: now, updatedAt: now }
+      mockObjects[index] = updated
+      return HttpResponse.json(updated)
     })
   }),
 
   // === CATALOGS ===
-  http.get('/api/object-types', async ({ request }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
+  http.get('/api/object-types', async ({ cookies }) => {
+    if (!sessionUser(cookies)) return unauthorized()
     return withDelay(() => HttpResponse.json(mockObjectTypes))
   }),
 
-  http.get('/api/work-types', async ({ request }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
+  http.get('/api/work-types', async ({ cookies }) => {
+    if (!sessionUser(cookies)) return unauthorized()
     return withDelay(() => HttpResponse.json(mockWorkTypes))
   }),
 
-  http.get('/api/organizations', async ({ request }) => {
-    const unauthorized = authed(request)
-    if (unauthorized) return unauthorized
-    return withDelay(() => HttpResponse.json(mockOrganizations))
+  http.get('/api/counterparties', async ({ cookies }) => {
+    if (!sessionUser(cookies)) return unauthorized()
+    return withDelay(() => HttpResponse.json(mockCounterparties))
   }),
 
   // === RESET (для тестов) ===

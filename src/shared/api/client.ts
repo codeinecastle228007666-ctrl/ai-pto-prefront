@@ -7,79 +7,19 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Важно для HttpOnly cookies
+  withCredentials: true,
 })
 
-let isRefreshing = false
-let failedQueue: Array<{
-  resolve: (value: unknown) => void
-  reject: (reason: unknown) => void
-}> = []
-
-const processQueue = (error: AxiosError | null) => {
-  failedQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error)
-    } else {
-      resolve(null)
-    }
-  })
-  failedQueue = []
-}
-
-// Request interceptor: добавляем токен к каждому запросу
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const accessToken = localStorage.getItem('accessToken')
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${accessToken}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
-// Response interceptor: обрабатываем 401 и рефрешим токен
+// 401 без живой cookie-сессии → на логин (кроме самого login)
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+  (error: AxiosError) => {
+    const status = error.response?.status
+    const url = error.config?.url ?? ''
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/me')
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject })
-        }).then(() => api(originalRequest))
-      }
-
-      originalRequest._retry = true
-      isRefreshing = true
-
-      try {
-        const refreshToken = localStorage.getItem('refreshToken')
-        if (!refreshToken) throw new Error('No refresh token')
-
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          { refreshToken },
-          { withCredentials: true }
-        )
-
-        const { accessToken, refreshToken: newRefreshToken } = response.data
-        localStorage.setItem('accessToken', accessToken)
-        localStorage.setItem('refreshToken', newRefreshToken)
-
-        processQueue(null)
-        return api(originalRequest)
-      } catch (refreshError) {
-        processQueue(refreshError as AxiosError)
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        window.location.href = '/login'
-        return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
-      }
+    if (status === 401 && !isAuthEndpoint && !window.location.pathname.startsWith('/login')) {
+      window.location.href = '/login'
     }
 
     return Promise.reject(error)

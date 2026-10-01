@@ -10,6 +10,7 @@ import { DashboardPage } from '@/pages/dashboard'
 import { ObjectsPage } from '@/pages/objects'
 import { ObjectDetailPage } from '@/pages/object-detail'
 import { ObjectEditPage } from '@/pages/object-edit'
+import { ObjectCreatePage } from '@/pages/object-new'
 import { ProfilePage } from '@/pages/profile'
 import { LandingPage } from '@/pages/landing'
 
@@ -46,6 +47,7 @@ export function AppRouter() {
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/objects" element={<ObjectsPage />} />
+              <Route path="/objects/new" element={<ObjectCreatePage />} />
               <Route path="/objects/:id" element={<ObjectDetailPage />} />
               <Route path="/objects/:id/edit" element={<ObjectEditPage />} />
               <Route path="/profile" element={<ProfilePage />} />
