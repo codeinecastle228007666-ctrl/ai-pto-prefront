@@ -1,4 +1,4 @@
-import { FolderKanban, AlertTriangle, CheckCircle, Archive } from 'lucide-react'
+import { FolderKanban, PauseCircle, CheckCircle, Flag } from 'lucide-react'
 import type { ConstructionObject } from '@/entities/object'
 import { Card, CardContent, Skeleton, cn } from '@/shared'
 
@@ -10,14 +10,14 @@ interface DashboardStatsProps {
 
 export function DashboardStats({ objects, total, isLoading }: DashboardStatsProps) {
   const activeCount = objects.filter((o) => o.status === 'active').length
+  const onHoldCount = objects.filter((o) => o.status === 'on_hold').length
   const completedCount = objects.filter((o) => o.status === 'completed').length
-  const findingsCount = objects.reduce((sum, o) => sum + (o._count?.findings ?? 0), 0)
 
   const stats = [
     { name: 'Всего объектов', value: String(total), icon: FolderKanban, color: 'text-blue-600 bg-blue-100' },
-    { name: 'Активных объектов', value: String(activeCount), icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-    { name: 'Замечаний на объектах', value: String(findingsCount), icon: AlertTriangle, color: 'text-red-600 bg-red-100' },
-    { name: 'Завершённых объектов', value: String(completedCount), icon: Archive, color: 'text-amber-600 bg-amber-100' },
+    { name: 'В работе', value: String(activeCount), icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+    { name: 'На паузе', value: String(onHoldCount), icon: PauseCircle, color: 'text-amber-600 bg-amber-100' },
+    { name: 'Завершено', value: String(completedCount), icon: Flag, color: 'text-gray-600 bg-gray-100' },
   ]
 
   return (

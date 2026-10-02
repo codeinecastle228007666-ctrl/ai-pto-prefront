@@ -19,7 +19,7 @@ export const mockWorkTypes: WorkType[] = [
   { id: 'wt-8', code: 'WATERPROOFING', name: 'Гидроизоляция' },
 ]
 
-export const mockOrganizations: OrganizationRef[] = [
+export const mockCounterparties: OrganizationRef[] = [
   { id: 'org-1', name: 'ООО «СтройМастер»' },
   { id: 'org-2', name: 'АО «Застройщик-Девелопер»' },
   { id: 'org-3', name: 'ООО «ТехЗаказчик-Проект»' },
@@ -135,8 +135,8 @@ export let mockObjects: ConstructionObject[] = baseObjects.map((obj, i) => ({
   id: `obj-${i + 1}`,
   workTypes: mockWorkTypes.slice(0, 3 + (i % 3)),
   objectType: mockObjectTypes.find(ot => ot.id === obj.objectTypeId),
-  customerOrganization: mockOrganizations.find(o => o.id === obj.customerOrganizationId),
-  contractorOrganization: mockOrganizations.find(o => o.id === obj.contractorOrganizationId),
+  customerOrganization: mockCounterparties.find(o => o.id === obj.customerOrganizationId),
+  contractorOrganization: mockCounterparties.find(o => o.id === obj.contractorOrganizationId),
   _count: { packages: Math.floor(Math.random() * 5) + 1, findings: Math.floor(Math.random() * 10) },
   readiness: Math.floor(Math.random() * 100),
   lastCheckedAt: randomDate(new Date('2024-08-01'), new Date()),
@@ -148,8 +148,8 @@ export function resetMockObjects() {
     id: `obj-${i + 1}`,
     workTypes: mockWorkTypes.slice(0, 3 + (i % 3)),
     objectType: mockObjectTypes.find(ot => ot.id === obj.objectTypeId),
-    customerOrganization: mockOrganizations.find(o => o.id === obj.customerOrganizationId),
-    contractorOrganization: mockOrganizations.find(o => o.id === obj.contractorOrganizationId),
+    customerOrganization: mockCounterparties.find(o => o.id === obj.customerOrganizationId),
+    contractorOrganization: mockCounterparties.find(o => o.id === obj.contractorOrganizationId),
     _count: { packages: Math.floor(Math.random() * 5) + 1, findings: Math.floor(Math.random() * 10) },
     readiness: Math.floor(Math.random() * 100),
     lastCheckedAt: randomDate(new Date('2024-08-01'), new Date()),

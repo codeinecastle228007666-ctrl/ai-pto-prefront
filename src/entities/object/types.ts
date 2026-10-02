@@ -33,10 +33,10 @@ export interface ConstructionObject {
   organizationId: string
   code: string
   name: string
-  address: string
+  address?: string
   objectTypeId: string
-  customerOrganizationId: string
-  contractorOrganizationId: string
+  customerOrganizationId?: string
+  contractorOrganizationId?: string
   status: ObjectStatus
   description?: string
   startDate?: string
@@ -77,6 +77,8 @@ export interface ObjectListParams {
   page?: number
   limit?: number
   search?: string
+  /** Включить архивные объекты (stage-1: includeArchived=true) */
+  includeArchived?: boolean
   status?: ObjectStatus[]
   objectTypeId?: string
   customerOrganizationId?: string

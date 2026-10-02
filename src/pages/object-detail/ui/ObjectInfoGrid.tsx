@@ -10,7 +10,7 @@ export function ObjectInfoGrid({ object }: ObjectInfoGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <InfoCard label="Тип объекта" value={object.objectType?.name || '—'} Icon={Building2} />
-      <InfoCard label="Адрес" value={object.address} Icon={MapPin} />
+      <InfoCard label="Адрес" value={object.address || '—'} Icon={MapPin} />
       <InfoCard label="Заказчик" value={object.customerOrganization?.name || '—'} Icon={User} />
       <InfoCard label="Подрядчик" value={object.contractorOrganization?.name || '—'} Icon={User} />
       <InfoCard label="Дата начала" value={formatObjectDate(object.startDate)} Icon={Calendar} />

@@ -42,7 +42,7 @@ export function LandingFooter() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight text-white">Свяжитесь с нами</h2>
             <p className="mt-4 max-w-md text-primary-200">
-              Расскажите о вашем объекте — покажем, как AI-ПТО сократит время проверки исполнительной
+              Расскажите о вашем объекте — покажем, как ПТО-Doc сократит время проверки исполнительной
               документации, и подключим вашу команду.
             </p>
 
@@ -57,7 +57,7 @@ export function LandingFooter() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-800 text-primary-300">
                   <Mail className="h-4 w-4" />
                 </span>
-                <a href="mailto:info@ai-pto.ru" className="hover:text-white">info@ai-pto.ru</a>
+                <a href="mailto:info@pto-doc.ru" className="hover:text-white">info@pto-doc.ru</a>
               </li>
               <li className="flex items-center gap-3">
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-800 text-primary-300">
@@ -126,7 +126,7 @@ export function LandingFooter() {
         </div>
 
         <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-primary-800 pt-8 text-sm text-primary-300 sm:flex-row">
-          <p>© {new Date().getFullYear()} AI-ПТО. Все права защищены.</p>
+          <p>© {new Date().getFullYear()} ПТО-Doc. Все права защищены.</p>
           <p>AI-ассистент проверки исполнительной документации</p>
         </div>
       </div>

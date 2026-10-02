@@ -1,72 +1,68 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
 import type { UserWithOrg } from '@/entities/user'
+import { clearMockSessionId, setMockSessionId } from '@/shared/api/mockSession'
 
 interface AuthState {
   user: UserWithOrg | null
-  accessToken: string | null
-  refreshToken: string | null
   organizationId: string | null
   isAuthenticated: boolean
-  setAuth: (data: { user: UserWithOrg; accessToken: string; refreshToken: string }) => void
+  /** false до первой попытки восстановить сессию через /auth/me */
+  sessionChecked: boolean
+  setUser: (user: UserWithOrg) => void
   updateUser: (user: Partial<UserWithOrg>) => void
   clearAuth: () => void
+  setSessionChecked: (checked: boolean) => void
   setOrganization: (orgId: string) => void
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  organizationId: null,
+  isAuthenticated: false,
+  sessionChecked: false,
+
+  setUser: (user) => {
+    setMockSessionId(user.id)
+    set({
+      user,
+      organizationId: user.membership.organizationId,
+      isAuthenticated: true,
+      sessionChecked: true,
+    })
+  },
+
+  updateUser: (userData) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...userData } : null,
+    })),
+
+  clearAuth: () => {
+    clearMockSessionId()
+    set({
       user: null,
-      accessToken: null,
-      refreshToken: null,
       organizationId: null,
       isAuthenticated: false,
+      sessionChecked: true,
+    })
+  },
 
-      setAuth: ({ user, accessToken, refreshToken }) =>
-        set({
-          user,
-          accessToken,
-          refreshToken,
-          organizationId: user.membership.organizationId,
-          isAuthenticated: true,
-        }),
+  setSessionChecked: (checked) => set({ sessionChecked: checked }),
 
-      updateUser: (userData) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...userData } : null,
-        })),
+  setOrganization: (orgId) =>
+    set((state) => ({
+      organizationId: orgId,
+      user: state.user
+        ? { ...state.user, membership: { ...state.user.membership, organizationId: orgId } }
+        : null,
+    })),
+}))
 
-      clearAuth: () =>
-        set({
-          user: null,
-          accessToken: null,
-          refreshToken: null,
-          organizationId: null,
-          isAuthenticated: false,
-        }),
-
-      setOrganization: (orgId) =>
-        set((state) => ({
-          organizationId: orgId,
-          user: state.user ? { ...state.user, membership: { ...state.user.membership, organizationId: orgId } } : null,
-        })),
-    }),
-    {
-      name: 'ai-pto-auth',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
-        organizationId: state.organizationId,
-        // user не сохраняем в localStorage — получаем через /auth/me
-      }),
-    }
-  )
-)
-
-// Селекторы для удобства
 export const useUser = () => useAuthStore((state) => state.user)
-export const useAccessToken = () => useAuthStore((state) => state.accessToken)
 export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated)
 export const useOrganizationId = () => useAuthStore((state) => state.organizationId)
+export const useIsOwner = () => useAuthStore((state) => state.user?.membership?.role === 'owner')
+
+export const ROLE_LABELS: Record<string, string> = {
+  owner: 'Владелец',
+  engineer: 'Инженер',
+}

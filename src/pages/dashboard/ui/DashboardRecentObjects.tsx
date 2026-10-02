@@ -24,7 +24,7 @@ export function DashboardRecentObjects({ objects, isLoading }: DashboardRecentOb
         ) : objects.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>Объектов пока нет</p>
-            <Link to="/objects" className="text-primary-600 hover:underline mt-2 inline-block">
+            <Link to="/objects/new" className="text-primary-600 hover:underline mt-2 inline-block">
               Создать первый объект
             </Link>
           </div>
@@ -40,12 +40,8 @@ export function DashboardRecentObjects({ objects, isLoading }: DashboardRecentOb
                   <p className="font-medium text-gray-900 truncate">{obj.name}</p>
                   <p className="text-sm text-gray-500 truncate">{obj.objectType?.name || obj.code}</p>
                 </div>
-                <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                <div className="flex items-center flex-shrink-0">
                   <StatusBadge status={obj.status} />
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{obj.readiness || 0}%</p>
-                    <p className="text-xs text-gray-500">готовность</p>
-                  </div>
                 </div>
               </Link>
             ))}

@@ -3,18 +3,18 @@ export const ENDPOINTS = {
     login: '/auth/login',
     logout: '/auth/logout',
     me: '/auth/me',
-    refresh: '/auth/refresh',
   },
   objects: {
     list: '/objects',
     create: '/objects',
     detail: (id: string) => `/objects/${id}`,
     update: (id: string) => `/objects/${id}`,
-    delete: (id: string) => `/objects/${id}`,
+    status: (id: string) => `/objects/${id}/status`,
+    archive: (id: string) => `/objects/${id}/archive`,
   },
   catalogs: {
     objectTypes: '/object-types',
     workTypes: '/work-types',
-    organizations: '/organizations',
+    counterparties: '/counterparties',
   },
 } as const

@@ -1,12 +1,6 @@
-export const mockUser = {
-  id: 'user-1',
-  email: 'engineer@pto.example.com',
-  name: 'Иван Петров',
-  status: 'active' as const,
-  createdAt: '2024-01-15T10:00:00Z',
-  updatedAt: '2024-01-15T10:00:00Z',
-  lastLoginAt: new Date().toISOString(),
-}
+import type { UserWithOrg } from '@/entities/user'
+
+export const SESSION_COOKIE = 'ai_pto_session'
 
 export const mockOrganization = {
   id: 'org-1',
@@ -15,27 +9,39 @@ export const mockOrganization = {
   status: 'active' as const,
 }
 
-export const mockMembership = {
-  id: 'mem-1',
-  userId: 'user-1',
-  organizationId: 'org-1',
-  role: 'engineer' as const,
-  status: 'active' as const,
-  createdAt: '2024-01-15T10:00:00Z',
+function makeUser(id: string, email: string, name: string, role: 'owner' | 'engineer'): UserWithOrg {
+  return {
+    id,
+    email,
+    name,
+    status: 'active',
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: '2024-01-15T10:00:00Z',
+    lastLoginAt: new Date().toISOString(),
+    organization: mockOrganization,
+    membership: {
+      id: `mem-${id}`,
+      userId: id,
+      organizationId: mockOrganization.id,
+      role,
+      status: 'active',
+      createdAt: '2024-01-15T10:00:00Z',
+    },
+  }
 }
 
-export const mockUserWithOrg = {
-  ...mockUser,
-  organization: mockOrganization,
-  membership: mockMembership,
+/** Сид-пользователи моков (пароль у обоих — password123). */
+export const mockUsers: UserWithOrg[] = [
+  makeUser('user-1', 'engineer@pto.example.com', 'Иван Петров', 'engineer'),
+  makeUser('user-2', 'owner@pto.example.com', 'Анна Смирнова', 'owner'),
+]
+
+export const MOCK_PASSWORD = 'password123'
+
+export function findMockUserByEmail(email?: string) {
+  return mockUsers.find((u) => u.email === email)
 }
 
-export const generateTokens = () => ({
-  accessToken: 'mock-access-token-' + Date.now(),
-  refreshToken: 'mock-refresh-token-' + Date.now(),
-})
-
-export const mockCredentials = {
-  email: 'engineer@pto.example.com',
-  password: 'password123',
+export function findMockUserById(id?: string) {
+  return mockUsers.find((u) => u.id === id)
 }

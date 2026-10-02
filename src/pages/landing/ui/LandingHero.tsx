@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, Bot, CheckCheck, FileSearch, FileText, Layers, ScanSearch, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Bot } from 'lucide-react'
 import { Button } from '@/shared'
 import { useParallax } from '../model/useParallax'
-
-const PIPELINE_STAGES = ['extract', 'classify', 'parse', 'rules', 'explain', 'report'] as const
 
 /** Hero-секция с параллаксом: несколько слоёв двигаются с разной скоростью при скролле. */
 export function LandingHero() {
@@ -81,49 +79,6 @@ export function LandingHero() {
           >
             Как это работает
           </a>
-        </div>
-
-        {/* Чипы этапов конвейера */}
-        <div
-          className="mt-16 flex max-w-3xl flex-wrap items-center justify-center gap-2"
-          style={{ transform: `translateY(${offset * 0.4}px)` }}
-        >
-          {PIPELINE_STAGES.map((stage, i) => (
-            <span key={stage} className="flex items-center gap-2">
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-primary-50 backdrop-blur">
-                {stage}
-              </span>
-              {i < PIPELINE_STAGES.length - 1 && <ArrowRight className="h-3 w-3 text-primary-300" />}
-            </span>
-          ))}
-        </div>
-
-        {/* Плавающие иконки (на мобильных скрыты, чтобы не мешать заголовку) */}
-        <div aria-hidden className="pointer-events-none absolute inset-0 z-0 hidden sm:block">
-          <FileText
-            className="absolute left-[8%] top-[22%] h-10 w-10 text-primary-400/40"
-            style={{ transform: `translateY(${offset * -0.3}px)` }}
-          />
-          <ScanSearch
-            className="absolute right-[10%] top-[30%] h-12 w-12 text-primary-300/40"
-            style={{ transform: `translateY(${offset * -0.45}px)` }}
-          />
-          <ShieldCheck
-            className="absolute left-[16%] bottom-[24%] h-11 w-11 text-primary-300/40"
-            style={{ transform: `translateY(${offset * -0.2}px)` }}
-          />
-          <Layers
-            className="absolute right-[16%] bottom-[30%] h-9 w-9 text-primary-400/40"
-            style={{ transform: `translateY(${offset * -0.35}px)` }}
-          />
-          <FileSearch
-            className="absolute right-[28%] top-[16%] h-8 w-8 text-primary-300/30"
-            style={{ transform: `translateY(${offset * -0.55}px)` }}
-          />
-          <CheckCheck
-            className="absolute left-[26%] top-[42%] h-9 w-9 text-primary-200/30"
-            style={{ transform: `translateY(${offset * -0.25}px)` }}
-          />
         </div>
       </div>
     </section>

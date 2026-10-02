@@ -11,11 +11,12 @@ interface ObjectsTableProps {
   onOpenObject: (object: ConstructionObject) => void
   onEditObject: (object: ConstructionObject) => void
   onArchiveObject: (object: ConstructionObject) => void
+  canArchive: boolean
   isLoading?: boolean
   filters: ObjectsFiltersState
   onFiltersChange: (filters: Partial<ObjectsFiltersState>) => void
   objectTypes: { id: string; name: string }[]
-  organizations: { id: string; name: string }[]
+  counterparties: { id: string; name: string }[]
 }
 
 /**
@@ -30,20 +31,22 @@ export function ObjectsTable({
   onOpenObject,
   onEditObject,
   onArchiveObject,
+  canArchive,
   isLoading,
   filters,
   onFiltersChange,
   objectTypes,
-  organizations,
+  counterparties,
 }: ObjectsTableProps) {
   const columns = useObjectsColumns({
     onOpenObject,
     onEditObject,
     onArchiveObject,
+    canArchive,
     filters,
     onFiltersChange,
     objectTypes,
-    organizations,
+    counterparties,
   })
 
   return (

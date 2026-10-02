@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { Button } from '@/shared'
-import logo from '@/assets/logo-ai-pto.jpg'
+import logo from '@/assets/logo-pto-doc.jpg'
 import { LANDING_NAV_LINKS } from '../model/content'
 
 export function LandingHeader() {
@@ -18,6 +18,16 @@ export function LandingHeader() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  /** Логотип всегда возвращает на начало главной страницы с плавной прокруткой. */
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setMobileOpen(false)
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname)
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <header
       className={
@@ -27,7 +37,12 @@ export function LandingHeader() {
       }
     >
       <div className="container-main flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2" aria-label="AI-ПТО, на главную">
+        <Link
+          to="/"
+          onClick={handleLogoClick}
+          className="flex cursor-pointer items-center gap-2"
+          aria-label="ПТО-Doc, на главную"
+        >
           <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm">
             <img src={logo} alt="" className="h-full w-full scale-125 object-cover" />
           </span>
@@ -38,7 +53,7 @@ export function LandingHeader() {
                 : 'text-xl font-bold text-white'
             }
           >
-            AI-ПТО
+            ПТО-Doc
           </span>
         </Link>
 

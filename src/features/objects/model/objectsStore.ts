@@ -15,6 +15,7 @@ interface ObjectsState {
 export const DEFAULT_OBJECT_FILTERS: ObjectsFiltersState = {
   search: '',
   status: [],
+  includeArchived: false,
   page: 1,
   limit: 20,
   sortBy: 'updatedAt',

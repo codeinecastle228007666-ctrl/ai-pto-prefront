@@ -1,46 +1,33 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useApiQuery, useApiMutation, queryKeys } from '@/shared'
-import { objectsApi, catalogsApi } from './objectsApi'
-import type { ConstructionObject, ObjectListParams } from '@/entities/object'
+import { objectsApi, catalogsApi, type ObjectWriteBody, type ObjectStatusTransition } from './objectsApi'
+import type { ObjectListParams } from '@/entities/object'
 
-// Список объектов
 export function useObjects(params: ObjectListParams = {}) {
-  return useApiQuery(
-    queryKeys.objects.list(params),
-    () => objectsApi.getList(params),
-    {
-      placeholderData: (previous) => previous,
-    }
-  )
+  return useApiQuery(queryKeys.objects.list(params), () => objectsApi.getList(params), {
+    placeholderData: (previous) => previous,
+  })
 }
 
-// Детали объекта
 export function useObject(id: string, enabled = true) {
-  return useApiQuery(
-    queryKeys.objects.detail(id),
-    () => objectsApi.getById(id),
-    { enabled: enabled && !!id }
-  )
+  return useApiQuery(queryKeys.objects.detail(id), () => objectsApi.getById(id), {
+    enabled: enabled && !!id,
+  })
 }
 
-// Создание объекта
 export function useCreateObject() {
   const queryClient = useQueryClient()
-  return useApiMutation(
-    (data: Partial<ConstructionObject>) => objectsApi.create(data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.objects.all })
-      },
-    }
-  )
+  return useApiMutation((data: ObjectWriteBody) => objectsApi.create(data), {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.objects.all })
+    },
+  })
 }
 
-// Обновление объекта
 export function useUpdateObject() {
   const queryClient = useQueryClient()
   return useApiMutation(
-    ({ id, data }: { id: string; data: Partial<ConstructionObject> }) => objectsApi.update(id, data),
+    ({ id, data }: { id: string; data: ObjectWriteBody }) => objectsApi.update(id, data),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.objects.all })
@@ -49,11 +36,10 @@ export function useUpdateObject() {
   )
 }
 
-// Архивация объекта
-export function useArchiveObject() {
+export function useChangeObjectStatus() {
   const queryClient = useQueryClient()
   return useApiMutation(
-    (id: string) => objectsApi.archive(id),
+    ({ id, status }: { id: string; status: ObjectStatusTransition }) => objectsApi.changeStatus(id, status),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.objects.all })
@@ -62,27 +48,29 @@ export function useArchiveObject() {
   )
 }
 
-// Каталоги
+export function useArchiveObject() {
+  const queryClient = useQueryClient()
+  return useApiMutation((id: string) => objectsApi.archive(id), {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.objects.all })
+    },
+  })
+}
+
 export function useObjectTypes() {
-  return useApiQuery(
-    queryKeys.catalogs.objectTypes,
-    () => catalogsApi.getObjectTypes(),
-    { staleTime: 5 * 60 * 1000 }
-  )
+  return useApiQuery(queryKeys.catalogs.objectTypes, () => catalogsApi.getObjectTypes(), {
+    staleTime: 5 * 60 * 1000,
+  })
 }
 
 export function useWorkTypes() {
-  return useApiQuery(
-    queryKeys.catalogs.workTypes,
-    () => catalogsApi.getWorkTypes(),
-    { staleTime: 5 * 60 * 1000 }
-  )
+  return useApiQuery(queryKeys.catalogs.workTypes, () => catalogsApi.getWorkTypes(), {
+    staleTime: 5 * 60 * 1000,
+  })
 }
 
-export function useOrganizations() {
-  return useApiQuery(
-    queryKeys.catalogs.organizations,
-    () => catalogsApi.getOrganizations(),
-    { staleTime: 5 * 60 * 1000 }
-  )
+export function useCounterparties() {
+  return useApiQuery(queryKeys.catalogs.counterparties, () => catalogsApi.getCounterparties(), {
+    staleTime: 5 * 60 * 1000,
+  })
 }

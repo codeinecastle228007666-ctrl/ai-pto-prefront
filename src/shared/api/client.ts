@@ -1,4 +1,10 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import axios, { type AxiosError } from 'axios'
+import {
+  MOCK_SESSION_HEADER,
+  clearMockSessionId,
+  getMockSessionId,
+  isMockMode,
+} from './mockSession'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
 
@@ -7,79 +13,31 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Важно для HttpOnly cookies
+  withCredentials: true,
 })
 
-let isRefreshing = false
-let failedQueue: Array<{
-  resolve: (value: unknown) => void
-  reject: (reason: unknown) => void
-}> = []
-
-const processQueue = (error: AxiosError | null) => {
-  failedQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error)
-    } else {
-      resolve(null)
+// В моках cookie из SW не сохраняется — шлём userId заголовком из sessionStorage
+api.interceptors.request.use((config) => {
+  if (isMockMode()) {
+    const sessionId = getMockSessionId()
+    if (sessionId) {
+      config.headers.set(MOCK_SESSION_HEADER, sessionId)
     }
-  })
-  failedQueue = []
-}
+  }
+  return config
+})
 
-// Request interceptor: добавляем токен к каждому запросу
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const accessToken = localStorage.getItem('accessToken')
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${accessToken}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
-// Response interceptor: обрабатываем 401 и рефрешим токен
+// 401 без живой cookie-сессии → на логин (кроме самого login/me)
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+  (error: AxiosError) => {
+    const status = error.response?.status
+    const url = error.config?.url ?? ''
+    const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/me')
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject })
-        }).then(() => api(originalRequest))
-      }
-
-      originalRequest._retry = true
-      isRefreshing = true
-
-      try {
-        const refreshToken = localStorage.getItem('refreshToken')
-        if (!refreshToken) throw new Error('No refresh token')
-
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          { refreshToken },
-          { withCredentials: true }
-        )
-
-        const { accessToken, refreshToken: newRefreshToken } = response.data
-        localStorage.setItem('accessToken', accessToken)
-        localStorage.setItem('refreshToken', newRefreshToken)
-
-        processQueue(null)
-        return api(originalRequest)
-      } catch (refreshError) {
-        processQueue(refreshError as AxiosError)
-        localStorage.removeItem('accessToken')
-        localStorage.removeItem('refreshToken')
-        window.location.href = '/login'
-        return Promise.reject(refreshError)
-      } finally {
-        isRefreshing = false
-      }
+    if (status === 401 && !isAuthEndpoint && !window.location.pathname.startsWith('/login')) {
+      if (isMockMode()) clearMockSessionId()
+      window.location.href = '/login'
     }
 
     return Promise.reject(error)

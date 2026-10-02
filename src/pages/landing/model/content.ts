@@ -73,7 +73,7 @@ export const LANDING_STEPS = [
     icon: Layers,
     title: '2. AI обрабатывает',
     description:
-      'Конвейер extract → classify → parse → rules → explain идёт по каждому документу, прогресс виден в реальном времени.',
+      'AI распознаёт тип каждого документа, извлекает данные и проверяет их по правилам — прогресс виден в реальном времени.',
   },
   {
     icon: FileSearch,
