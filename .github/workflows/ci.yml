@@ -1,0 +1,44 @@
+name: CI/CD
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+
+concurrency:
+  group: deploy-${{ github.repository }}
+  cancel-in-progress: true
+
+env:
+  HUSKY: 0
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build   # tsc -b && vite build
+        env:
+          VITE_API_URL: https://api.ptodoc.space
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push'
+        with: { name: dist, path: dist, retention-days: 1 }
+
+  deploy:
+    needs: check-and-build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: dist, path: dist }
+      - name: SSH setup
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+      - run: rsync -az --delete dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/srv/ptodoc/web/
