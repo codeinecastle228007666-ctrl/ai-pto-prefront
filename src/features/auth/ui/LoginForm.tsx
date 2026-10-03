@@ -32,7 +32,7 @@ export function LoginForm() {
   const setUser = useAuthStore((state) => state.setUser)
   const [error, setError] = useState<string | null>(null)
 
-  const from = (location.state as { from?: Location })?.from?.pathname || '/dashboard'
+  const from = (location.state as { from?: Location })?.from?.pathname || '/'
 
   const {
     register,
@@ -52,7 +52,7 @@ export function LoginForm() {
       await authApi.login(data)
       const user = await authApi.me()
       setUser(user)
-      navigate(from === '/login' ? '/dashboard' : from, { replace: true })
+      navigate(from === '/login' || from === '/welcome' ? '/' : from, { replace: true })
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number } }
       if (axiosError.response?.status === 401) {

@@ -38,7 +38,7 @@ export function LandingHeader() {
     >
       <div className="container-main flex h-16 items-center justify-between">
         <Link
-          to="/"
+          to="/welcome"
           onClick={handleLogoClick}
           className="flex cursor-pointer items-center gap-2"
           aria-label="ПТО-Doc, на главную"

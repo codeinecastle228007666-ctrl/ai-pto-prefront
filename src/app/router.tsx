@@ -24,15 +24,11 @@ const queryClient = new QueryClient({
   },
 })
 
-/**
- * Корень сайта: неавторизованным — лендинг, авторизованным — сразу кабинет.
- * Важно: индексный маршрут внутри защищённой группы убран, иначе он перебивает
- * этот маршрут по рангу react-router и «/» всегда редиректил в кабинет.
- */
-function LandingRoute() {
+/** Публичный лендинг; с живой сессией — в кабинет на `/`. */
+function WelcomeRoute() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  if (isAuthenticated) return <Navigate to="/" replace />
   return <LandingPage />
 }
 
@@ -42,10 +38,11 @@ export function AppRouter() {
       <TooltipProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<LandingRoute />} />
+            <Route path="/welcome" element={<WelcomeRoute />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/" element={<DashboardPage />} />
               <Route path="/objects" element={<ObjectsPage />} />
               <Route path="/objects/new" element={<ObjectCreatePage />} />
               <Route path="/objects/:id" element={<ObjectDetailPage />} />

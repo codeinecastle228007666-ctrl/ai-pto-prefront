@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuContent, Drop
 import logo from '@/assets/logo-pto-doc.jpg'
 
 const navigation = [
-  { name: 'Обзор', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Обзор', href: '/', icon: LayoutDashboard },
   { name: 'Объекты', href: '/objects', icon: FolderKanban },
   { name: 'Профиль', href: '/profile', icon: UserIcon },
 ]
@@ -48,7 +48,7 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
           )}
         >
           <Link
-            to="/dashboard"
+            to="/"
             aria-label="На главную"
             className={cn(
               'flex items-center gap-2 shrink-0',
@@ -82,8 +82,9 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
       <nav className={cn('flex-1 py-4 space-y-1 overflow-y-auto scrollbar-thin', collapsed ? 'px-2.5' : 'px-3')}>
         {navigation.map((item) => {
           const isActive =
-            location.pathname === item.href ||
-            (item.href !== '/dashboard' && location.pathname.startsWith(item.href))
+            item.href === '/'
+              ? location.pathname === '/'
+              : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`)
           const button = (
             <Button
               key={item.name}
