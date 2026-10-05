@@ -146,11 +146,13 @@ export interface Checklist {
   items: ChecklistItem[]
 }
 
-/** События SSE GET /packages/{id}/events. Поле `type` совпадает с именем события. */
-export type PackageEvent =
-  | { type: 'package.snapshot'; package: PackageDetail }
-  | { type: 'document.stage'; documentId: string; stage: Stage; status: StageStatus; error?: { code: string; message: string } }
-  | { type: 'package.progress'; progress: number }
-  | { type: 'package.done'; status: 'done' | 'partial' | 'failed'; findings?: SeverityCounts }
+/** Событие SSE `progress` из GET /packages/{id}/events. Состав документов и этапов — в GET /packages/{id}. */
+export interface PackageProgressEvent {
+  packageId: string
+  status: PackageStatus
+  progress: number
+}
 
-export const PACKAGE_EVENT_TYPES = ['package.snapshot', 'document.stage', 'package.progress', 'package.done'] as const
+export const PACKAGE_PROGRESS_EVENT = 'progress'
+
+export const FINISHED_PACKAGE_STATUSES: PackageStatus[] = ['done', 'partial', 'failed']

@@ -2,8 +2,13 @@ import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
 import { api } from '@/shared'
-import { PACKAGE_EVENT_TYPES, type PackageDetail, type PackageEvent } from '@/entities/package'
-import { applyPackageEvent } from '../model/applyPackageEvent'
+import {
+  FINISHED_PACKAGE_STATUSES,
+  PACKAGE_PROGRESS_EVENT,
+  type PackageDetail,
+  type PackageProgressEvent,
+} from '@/entities/package'
+import { applyProgressEvent } from '../model/applyPackageEvent'
 import { packagesApi } from './packagesApi'
 
 const ACTIVE_STATUSES = ['uploading', 'queued', 'processing']
@@ -40,24 +45,26 @@ export function usePackage(packageId: string) {
     source.onerror = () => setLive(false) // браузер переподключится сам, пока работает поллинг
 
     const handle = (message: MessageEvent<string>) => {
-      let event: PackageEvent
+      let event: PackageProgressEvent
       try {
-        event = JSON.parse(message.data) as PackageEvent
+        event = JSON.parse(message.data) as PackageProgressEvent
       } catch {
         return
       }
-      queryClient.setQueryData<PackageDetail>(packageKey(packageId), (prev) => applyPackageEvent(prev, event))
-      if (event.type === 'package.done') {
+      queryClient.setQueryData<PackageDetail>(packageKey(packageId), (prev) => applyProgressEvent(prev, event))
+      // Истина о документах и этапах — GET пакета: перечитываем по каждому событию
+      queryClient.invalidateQueries({ queryKey: packageKey(packageId) })
+
+      if (FINISHED_PACKAGE_STATUSES.includes(event.status)) {
         source.close()
         setLive(false)
-        // результаты обработки: замечания, поля, комплектность и точное состояние пакета
-        queryClient.invalidateQueries({ queryKey: ['packages'] })
+        // результаты обработки: замечания, поля, комплектность
         queryClient.invalidateQueries({ queryKey: ['findings'] })
         queryClient.invalidateQueries({ queryKey: ['checklist'] })
         queryClient.invalidateQueries({ queryKey: ['documents'] })
       }
     }
-    PACKAGE_EVENT_TYPES.forEach((type) => source.addEventListener(type, handle as EventListener))
+    source.addEventListener(PACKAGE_PROGRESS_EVENT, handle as EventListener)
 
     return () => {
       source.close()
