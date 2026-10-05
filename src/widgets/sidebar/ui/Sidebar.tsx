@@ -133,7 +133,7 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
                 </Avatar>
                 <div className="text-left flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{user?.name || 'Пользователь'}</p>
-                  <p className="text-xs text-gray-500 truncate">{user?.organization?.name || user?.membership?.organizationId || 'Организация'}</p>
+                  <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
                 </div>
                 <ChevronsUpDown className="h-4 w-4 flex-shrink-0 text-gray-400" />
               </Button>

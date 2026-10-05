@@ -24,8 +24,6 @@ interface ObjectWriteInput {
   customerOrganizationId?: string
   contractorOrganizationId?: string
   description?: string
-  startDate?: string
-  plannedEndDate?: string
 }
 
 type StatusTransition = Exclude<ObjectStatus, 'archived'>
@@ -56,8 +54,8 @@ function sessionUser(request: Request, cookies: Record<string, string>) {
   return findMockUserById(fromHeader || fromCookie || mockSessionUserId || undefined)
 }
 
-const unauthorized = () => HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-const notFound = () => HttpResponse.json({ message: 'Object not found' }, { status: 404 })
+const unauthorized = () => HttpResponse.json({ code: 'unauthorized', message: 'Unauthorized' }, { status: 401 })
+const notFound = () => HttpResponse.json({ code: 'not_found', message: 'Объект не найден' }, { status: 404 })
 
 function parseQuery(url: string) {
   const { searchParams } = new URL(url)
@@ -73,6 +71,11 @@ function parseQuery(url: string) {
   return params
 }
 
+const orgRef = (id?: string) => {
+  const org = mockCounterparties.find((o) => o.id === id)
+  return org ? { id: org.id, name: org.name } : null
+}
+
 const codeTaken = (code: string, exceptId?: string) =>
   mockObjects.some((o) => o.code.toLowerCase() === code.toLowerCase() && o.id !== exceptId)
 
@@ -84,12 +87,11 @@ export const handlers = [
       const user = findMockUserByEmail(body.email)
       if (user && body.password === MOCK_PASSWORD) {
         mockSessionUserId = user.id
-        return new HttpResponse(null, {
-          status: 204,
+        return HttpResponse.json(user, {
           headers: { 'Set-Cookie': `${SESSION_COOKIE}=${user.id}; Path=/; SameSite=Lax` },
         })
       }
-      return HttpResponse.json({ message: 'Неверный email или пароль' }, { status: 401 })
+      return HttpResponse.json({ code: 'unauthorized', message: 'Неверный email или пароль' }, { status: 401 })
     })
   }),
 
@@ -116,71 +118,8 @@ export const handlers = [
 
     return withDelay(() => {
       const params = parseQuery(request.url)
-      let filtered = [...mockObjects]
-
-      if (params.includeArchived !== 'true') {
-        filtered = filtered.filter((o) => o.status !== 'archived')
-      }
-
-      if (params.search) {
-        const search = String(params.search).toLowerCase()
-        filtered = filtered.filter(
-          (o) =>
-            o.name.toLowerCase().includes(search) ||
-            o.code.toLowerCase().includes(search) ||
-            (o.address ?? '').toLowerCase().includes(search)
-        )
-      }
-
-      if (params.status) {
-        const statuses = Array.isArray(params.status) ? params.status : [params.status]
-        filtered = filtered.filter((o) => statuses.includes(o.status))
-      }
-
-      if (params.objectTypeId) {
-        filtered = filtered.filter((o) => o.objectTypeId === params.objectTypeId)
-      }
-
-      if (params.customerOrganizationId) {
-        filtered = filtered.filter((o) => o.customerOrganizationId === params.customerOrganizationId)
-      }
-
-      if (params.contractorOrganizationId) {
-        filtered = filtered.filter((o) => o.contractorOrganizationId === params.contractorOrganizationId)
-      }
-
-      const sortBy = String(params.sortBy || 'updatedAt')
-      const sortOrder = String(params.sortOrder || 'desc')
-      // Для сортировки по связям (тип/заказчик/подрядчик) используем имя связанной сущности
-      const sortValue = (o: ConstructionObject): string | number | undefined => {
-        switch (sortBy) {
-          case 'objectTypeId': return o.objectType?.name
-          case 'customerOrganizationId': return o.customerOrganization?.name
-          case 'contractorOrganizationId': return o.contractorOrganization?.name
-          default: return o[sortBy as keyof ConstructionObject] as string | number | undefined
-        }
-      }
-      filtered.sort((a, b) => {
-        const aVal = sortValue(a)
-        const bVal = sortValue(b)
-        if (aVal == null || bVal == null) return 0
-        if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1
-        if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1
-        return 0
-      })
-
-      const page = parseInt(String(params.page || '1'))
-      const limit = parseInt(String(params.limit || '20'))
-      const start = (page - 1) * limit
-      const paginated = filtered.slice(start, start + limit)
-
-      return HttpResponse.json({
-        data: paginated,
-        total: filtered.length,
-        page,
-        limit,
-        totalPages: Math.ceil(filtered.length / limit),
-      })
+      const includeArchived = params.includeArchived === 'true'
+      return HttpResponse.json(mockObjects.filter((o) => includeArchived || o.status !== 'archived'))
     })
   }),
 
@@ -191,29 +130,26 @@ export const handlers = [
     return withDelay(async () => {
       const body = (await request.json()) as ObjectWriteInput
       if (codeTaken(body.code)) {
-        return HttpResponse.json({ message: 'Object code already exists' }, { status: 409 })
+        return HttpResponse.json({ code: 'conflict', message: 'Object code already exists' }, { status: 409 })
       }
       const now = new Date().toISOString()
       const newObject: ConstructionObject = {
         id: `obj-${Date.now()}`,
-        organizationId: user.membership.organizationId,
         code: body.code,
         name: body.name,
-        address: body.address,
-        objectTypeId: body.objectTypeId,
-        customerOrganizationId: body.customerOrganizationId,
-        contractorOrganizationId: body.contractorOrganizationId,
+        address: body.address ?? null,
         status: 'draft',
-        description: body.description,
-        startDate: body.startDate,
-        plannedEndDate: body.plannedEndDate,
-        createdById: user.id,
+        description: body.description ?? null,
+        objectType: mockObjectTypes.find((ot) => ot.id === body.objectTypeId)!,
+        customer: orgRef(body.customerOrganizationId),
+        contractor: orgRef(body.contractorOrganizationId),
+        workTypes: mockWorkTypes.filter((wt) => body.workTypeIds?.includes(wt.id)),
+        startDate: null,
+        plannedEndDate: null,
+        actualEndDate: null,
         createdAt: now,
         updatedAt: now,
-        workTypes: mockWorkTypes.filter((wt) => body.workTypeIds?.includes(wt.id)),
-        objectType: mockObjectTypes.find((ot) => ot.id === body.objectTypeId),
-        customerOrganization: mockCounterparties.find((o) => o.id === body.customerOrganizationId),
-        contractorOrganization: mockCounterparties.find((o) => o.id === body.contractorOrganizationId),
+        archivedAt: null,
       }
       mockObjects.unshift(newObject)
       return HttpResponse.json(newObject, { status: 201 })
@@ -238,32 +174,24 @@ export const handlers = [
       if (index === -1) return notFound()
       const existing = mockObjects[index]!
       if (existing.status === 'archived') {
-        return HttpResponse.json({ message: 'Archived object is read-only' }, { status: 409 })
+        return HttpResponse.json({ code: 'conflict', message: 'Archived object is read-only' }, { status: 409 })
       }
       if (body.code && codeTaken(body.code, existing.id)) {
-        return HttpResponse.json({ message: 'Object code already exists' }, { status: 409 })
+        return HttpResponse.json({ code: 'conflict', message: 'Object code already exists' }, { status: 409 })
       }
-      const customerId = 'customerOrganizationId' in body ? body.customerOrganizationId : existing.customerOrganizationId
-      const contractorId = 'contractorOrganizationId' in body ? body.contractorOrganizationId : existing.contractorOrganizationId
-      const objectTypeId = body.objectTypeId ?? existing.objectTypeId
       const updated: ConstructionObject = {
         ...existing,
         code: body.code ?? existing.code,
         name: body.name ?? existing.name,
-        address: 'address' in body ? body.address : existing.address,
-        objectTypeId,
-        customerOrganizationId: customerId,
-        contractorOrganizationId: contractorId,
-        description: 'description' in body ? body.description : existing.description,
-        startDate: 'startDate' in body ? body.startDate : existing.startDate,
-        plannedEndDate: 'plannedEndDate' in body ? body.plannedEndDate : existing.plannedEndDate,
-        updatedAt: new Date().toISOString(),
+        address: 'address' in body ? body.address ?? null : existing.address,
+        description: 'description' in body ? body.description ?? null : existing.description,
+        objectType: mockObjectTypes.find((ot) => ot.id === body.objectTypeId) ?? existing.objectType,
+        customer: 'customerOrganizationId' in body ? orgRef(body.customerOrganizationId) : existing.customer,
+        contractor: 'contractorOrganizationId' in body ? orgRef(body.contractorOrganizationId) : existing.contractor,
         workTypes: body.workTypeIds
           ? mockWorkTypes.filter((wt) => body.workTypeIds!.includes(wt.id))
           : existing.workTypes,
-        objectType: mockObjectTypes.find((ot) => ot.id === objectTypeId),
-        customerOrganization: mockCounterparties.find((o) => o.id === customerId),
-        contractorOrganization: mockCounterparties.find((o) => o.id === contractorId),
+        updatedAt: new Date().toISOString(),
       }
       mockObjects[index] = updated
       return HttpResponse.json(updated)
@@ -279,13 +207,13 @@ export const handlers = [
       if (index === -1) return notFound()
       const existing = mockObjects[index]!
       if (!ALLOWED_TRANSITIONS[existing.status].includes(status)) {
-        return HttpResponse.json({ message: 'Status transition not allowed' }, { status: 409 })
+        return HttpResponse.json({ code: 'conflict', message: 'Status transition not allowed' }, { status: 409 })
       }
       const now = new Date().toISOString()
       const updated: ConstructionObject = {
         ...existing,
         status,
-        actualEndDate: status === 'completed' ? now : existing.actualEndDate,
+        actualEndDate: status === 'completed' ? now.slice(0, 10) : existing.actualEndDate,
         updatedAt: now,
       }
       mockObjects[index] = updated
@@ -296,8 +224,8 @@ export const handlers = [
   http.post('/api/objects/:id/archive', async ({ request, params, cookies }) => {
     const user = sessionUser(request, cookies)
     if (!user) return unauthorized()
-    if (user.membership.role !== 'owner') {
-      return HttpResponse.json({ message: 'Only owner can archive objects' }, { status: 403 })
+    if (user.role !== 'owner') {
+      return HttpResponse.json({ code: 'forbidden', message: 'Only owner can archive objects' }, { status: 403 })
     }
 
     return withDelay(() => {
@@ -305,7 +233,7 @@ export const handlers = [
       if (index === -1) return notFound()
       const existing = mockObjects[index]!
       if (existing.status === 'archived') {
-        return HttpResponse.json({ message: 'Object already archived' }, { status: 409 })
+        return HttpResponse.json({ code: 'conflict', message: 'Object already archived' }, { status: 409 })
       }
       const now = new Date().toISOString()
       const updated: ConstructionObject = { ...existing, status: 'archived', archivedAt: now, updatedAt: now }

@@ -10,7 +10,7 @@ export function DashboardPage() {
   const user = useUser()
   const { data, isLoading } = useObjects({ page: 1, limit: 100, sortBy: 'updatedAt', sortOrder: 'desc' })
   const objects = data?.data ?? []
-  const role = user?.membership?.role
+  const role = user?.role
   const roleLabel = role ? ROLE_LABELS[role] ?? role : '—'
 
   return (
@@ -20,7 +20,6 @@ export function DashboardPage() {
           <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Обзор</h1>
           <p className="text-gray-500 mt-1 text-sm sm:text-base truncate">
             {user?.email} · {roleLabel}
-            {user?.organization?.name ? ` · ${user.organization.name}` : ''}
           </p>
         </div>
         <Button asChild className="w-full sm:w-auto shrink-0">
