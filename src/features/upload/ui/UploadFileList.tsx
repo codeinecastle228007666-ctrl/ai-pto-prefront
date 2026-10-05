@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Copy, FileText, Loader2, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, FileText, Loader2, X } from 'lucide-react'
 import { Button, Progress } from '@/shared'
 import type { UploadItem } from '../model/useUploadQueue'
 
@@ -23,14 +23,12 @@ export function UploadFileList({ items, onRemove }: UploadFileListProps) {
             <p className="truncate text-sm font-medium text-gray-900">{item.file.name}</p>
             <p className="text-xs text-gray-500">
               {formatSize(item.file.size)}
-              {item.status === 'duplicate' && ' · уже загружен ранее'}
               {item.status === 'error' && <span className="text-red-600"> · {item.error}</span>}
             </p>
             {item.status === 'uploading' && <Progress value={item.progress} className="mt-2 h-1.5" />}
           </div>
           {item.status === 'uploading' && <Loader2 className="h-4 w-4 animate-spin text-primary-600" />}
           {item.status === 'uploaded' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
-          {item.status === 'duplicate' && <Copy className="h-4 w-4 text-gray-400" />}
           {item.status === 'error' && <AlertCircle className="h-4 w-4 text-red-600" />}
           {item.status === 'queued' && onRemove && (
             <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Убрать файл" onClick={() => onRemove(item.id)}>

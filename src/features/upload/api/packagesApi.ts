@@ -29,9 +29,9 @@ export async function uploadToStorage(
   onProgress: (percent: number) => void,
   signal?: AbortSignal
 ): Promise<void> {
-  if (!target.uploadUrl) return
-  await axios.put(target.uploadUrl, file, {
-    headers: { 'Content-Type': file.type, ...target.headers },
+  // Content-Type должен совпадать с mimeType, переданным при создании пакета
+  await axios.put(target.url, file, {
+    headers: { 'Content-Type': file.type },
     signal,
     onUploadProgress: (e: AxiosProgressEvent) => {
       if (e.total) onProgress(Math.round((e.loaded / e.total) * 100))

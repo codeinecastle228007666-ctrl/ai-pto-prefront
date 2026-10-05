@@ -20,7 +20,6 @@ interface MockPackage {
 }
 
 const packages = new Map<string, MockPackage>()
-const knownHashes = new Map<string, string>() // sha256 → documentId
 const uploaded = new Set<string>()
 
 const STAGES: Stage[] = ['extract', 'classify', 'parse', 'rules', 'explain']
@@ -52,7 +51,6 @@ export function createMockPackage(objectId: string, body: PackageCreate): Packag
   const uploads: PackageCreated['uploads'] = []
 
   for (const f of body.files) {
-    const duplicateOf = f.sha256 ? knownHashes.get(f.sha256) ?? null : null
     const documentId = uid('doc')
     documents.push({
       id: documentId,
@@ -63,27 +61,20 @@ export function createMockPackage(objectId: string, body: PackageCreate): Packag
       sizeBytes: f.sizeBytes,
       pageCount: f.mimeType === 'application/pdf' ? 3 : null,
       type: 'unknown',
-      status: duplicateOf ? 'uploaded' : 'awaiting_upload',
+      status: 'awaiting_upload',
       stages: {},
       findings: { error: 0, warning: 0, info: 0, critical: 0 },
       createdAt: pkg.createdAt,
     })
-    if (duplicateOf) {
-      uploaded.add(documentId)
-    } else if (f.sha256) {
-      knownHashes.set(f.sha256, documentId)
-    }
     uploads.push({
       documentId,
-      fileName: f.fileName,
-      uploadUrl: duplicateOf ? null : `/api/__mocks__/upload/${documentId}`,
-      expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
-      duplicateOf,
+      url: `/api/__mocks__/upload/${documentId}`,
+      objectKey: `${pkg.id}/${documentId}/${f.fileName}`,
     })
   }
 
   packages.set(pkg.id, { pkg, documents })
-  return { package: pkg, uploads }
+  return { packageId: pkg.id, version, uploads }
 }
 
 export function markMockUploaded(documentId: string): boolean {
@@ -203,6 +194,5 @@ export function resetMockPackages() {
   resetMockFields()
   resetMockReports()
   packages.clear()
-  knownHashes.clear()
   uploaded.clear()
 }

@@ -35,6 +35,7 @@ export interface PackageCreateFile {
   fileName: string
   mimeType: AllowedMimeType
   sizeBytes: number
+  /** Необязательно: start сверит хеш загруженного объекта */
   sha256?: string
 }
 
@@ -53,16 +54,15 @@ export interface Package {
 
 export interface UploadTarget {
   documentId: string
-  fileName: string
-  /** null — файл дубликат, загружать не нужно */
-  uploadUrl: string | null
-  headers?: Record<string, string>
-  expiresAt?: string
-  duplicateOf?: string | null
+  /** Временная ссылка для PUT в хранилище */
+  url: string
+  objectKey: string
 }
 
 export interface PackageCreated {
-  package: Package
+  packageId: string
+  version: number
+  /** Порядок совпадает с порядком files в запросе */
   uploads: UploadTarget[]
 }
 
