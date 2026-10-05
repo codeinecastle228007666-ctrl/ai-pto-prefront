@@ -8,6 +8,7 @@ import type {
   Stage,
   StageState,
 } from '@/entities/package'
+import { resetMockFields } from './fields'
 import { ensureFindings, openCounts, resetMockFindings } from './findings'
 
 interface MockPackage {
@@ -159,8 +160,17 @@ export function latestMockPackageId(objectId: string): string | null {
   return list.at(-1)?.pkg.id ?? null
 }
 
+export function getMockDocument(documentId: string): PackageDocument | null {
+  for (const p of packages.values()) {
+    const doc = computeMockPackage(p).documents.find((d) => d.id === documentId)
+    if (doc) return doc
+  }
+  return null
+}
+
 export function resetMockPackages() {
   resetMockFindings()
+  resetMockFields()
   packages.clear()
   knownHashes.clear()
   uploaded.clear()

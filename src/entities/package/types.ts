@@ -99,3 +99,30 @@ export interface PackageDocument {
 export interface PackageDetail extends Package {
   documents: PackageDocument[]
 }
+
+/** Место в файле, откуда извлечено значение. Для PDF — page и bbox в долях страницы [x0, y0, x1, y1]. */
+export interface FieldSource {
+  documentId: string
+  page?: number
+  bbox?: [number, number, number, number]
+  quote?: string
+}
+
+export interface ExtractedField {
+  key: string
+  label: string
+  value: string | null
+  confidence: number
+  source?: FieldSource
+  editedManually: boolean
+  /** Значение до ручной правки */
+  originalValue?: string | null
+}
+
+export interface DocumentDetail extends PackageDocument {
+  fields: ExtractedField[]
+  /** Поля с уверенностью ниже порога подсвечиваем */
+  lowConfidenceThreshold?: number
+}
+
+export const DEFAULT_LOW_CONFIDENCE_THRESHOLD = 0.8

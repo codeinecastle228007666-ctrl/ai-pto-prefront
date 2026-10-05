@@ -8,12 +8,14 @@ import {
   findMockUserById,
 } from './data/auth'
 import type { PackageCreate } from '@/entities/package'
+import { getMockFields, updateMockFields } from './data/fields'
 import { listFindings, updateFinding } from './data/findings'
 import type { FindingUpdate } from '@/entities/finding'
 import {
   createMockPackage,
   doneMockDocumentIds,
   latestMockPackageId,
+  getMockDocument,
   getMockPackage,
   markMockUploaded,
   resetMockPackages,
@@ -295,6 +297,30 @@ export const handlers = [
     return pkg
       ? HttpResponse.json(pkg)
       : HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
+  }),
+
+  // === DOCUMENTS / FIELDS ===
+  http.get('/api/documents/:id', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+    return withDelay(() => {
+      const doc = getMockDocument(String(params.id))
+      if (!doc) return HttpResponse.json({ code: 'not_found', message: 'Документ не найден' }, { status: 404 })
+      const fields = doc.status === 'done' ? getMockFields(doc.id) : []
+      return HttpResponse.json({ ...doc, fields, lowConfidenceThreshold: 0.8 })
+    })
+  }),
+
+  http.patch('/api/documents/:id/fields', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+    const body = (await request.json()) as { fields?: { key: string; value: string | null }[] }
+    return withDelay(() => {
+      const doc = getMockDocument(String(params.id))
+      if (!doc) return HttpResponse.json({ code: 'not_found', message: 'Документ не найден' }, { status: 404 })
+      if (!body.fields?.length || updateMockFields(doc.id, body.fields) === 'unknown_key') {
+        return HttpResponse.json({ code: 'validation_error', message: 'Неизвестное поле документа' }, { status: 422 })
+      }
+      return HttpResponse.json({ ...doc, fields: getMockFields(doc.id), lowConfidenceThreshold: 0.8 })
+    })
   }),
 
   // === FINDINGS ===

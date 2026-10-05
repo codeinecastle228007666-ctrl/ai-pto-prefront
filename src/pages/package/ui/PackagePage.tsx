@@ -4,7 +4,11 @@ import { usePackage } from '@/features/upload'
 import { DocumentPreview, DocumentTree, type PdfHighlight } from '@/features/review'
 import { FindingsPanel, SEVERITY_STYLES, useFindings } from '@/features/findings'
 import type { Finding } from '@/entities/finding'
-import { Alert, AlertDescription, Button, Card, Progress } from '@/shared'
+import type { ExtractedField } from '@/entities/package'
+
+const FIELD_HIGHLIGHT_COLOR = 'rgba(99, 102, 241, 0.3)'
+import { FieldsPanel, useDocumentDetail } from '@/features/fields'
+import { Alert, AlertDescription, Button, Card, Progress, Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared'
 
 /** Рабочая область пакета: дерево документов, просмотр оригинала и панель замечаний с подсветкой на странице. */
 export function PackagePage() {
@@ -14,6 +18,7 @@ export function PackagePage() {
   const { data: pkg, isLoading, error } = usePackage(packageId)
   const ready = pkg?.status === 'done' || pkg?.status === 'partial'
   const { data: findingsPage } = useFindings(id, packageId, ready)
+  const { data: documentDetail } = useDocumentDetail(searchParams.get('doc') ?? undefined, ready)
 
   if (isLoading) {
     return (
@@ -33,7 +38,10 @@ export function PackagePage() {
 
   const selected = pkg.documents.find((d) => d.id === searchParams.get('doc'))
   const selectedFinding = findingsPage?.items.find((f) => f.id === searchParams.get('finding'))
-  const sourceOnPage = selectedFinding?.sources.find((s) => s.documentId === selected?.id && s.page)
+  const selectedField = documentDetail?.fields.find((f) => f.key === searchParams.get('field'))
+  const sourceOnPage =
+    selectedFinding?.sources.find((s) => s.documentId === selected?.id && s.page) ??
+    (selectedField?.source?.page ? selectedField.source : undefined)
 
   // Подсвечиваем открытые замечания текущего документа (и выбранное, даже если уже решено)
   const highlights: PdfHighlight[] = (findingsPage?.items ?? [])
@@ -48,6 +56,21 @@ export function PackagePage() {
           color: SEVERITY_STYLES[f.severity].highlight,
         }))
     )
+
+  if (selectedField?.source?.page && selectedField.source.bbox && selected) {
+    highlights.push({
+      id: `field:${selectedField.key}`,
+      page: selectedField.source.page,
+      bbox: selectedField.source.bbox,
+      color: FIELD_HIGHLIGHT_COLOR,
+    })
+  }
+
+  const handleSelectField = (field: ExtractedField) => {
+    if (!selected) return
+    if (field.key === selectedField?.key) setSearchParams({ doc: selected.id }, { replace: true })
+    else setSearchParams({ doc: selected.id, field: field.key }, { replace: true })
+  }
 
   const handleSelectFinding = (f: Finding) => {
     if (f.id === selectedFinding?.id) setSearchParams({ doc: f.documentId }, { replace: true })
@@ -92,7 +115,7 @@ export function PackagePage() {
               document={selected}
               page={sourceOnPage?.page}
               highlights={highlights}
-              activeHighlightId={selectedFinding?.id}
+              activeHighlightId={selectedField ? `field:${selectedField.key}` : selectedFinding?.id}
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center text-gray-500">
@@ -103,15 +126,31 @@ export function PackagePage() {
         </Card>
 
         <Card className="h-[60vh] overflow-hidden lg:col-span-2 xl:col-span-1 xl:h-[calc(100vh-13rem)]">
-          <FindingsPanel
-            objectId={id}
-            packageId={packageId}
-            documents={pkg.documents}
-            ready={!!ready}
-            selectedDocumentId={selected?.id}
-            selectedFindingId={selectedFinding?.id}
-            onSelectFinding={handleSelectFinding}
-          />
+          <Tabs defaultValue="findings" className="flex h-full min-h-0 flex-col">
+            <TabsList className="m-3 mb-0 grid grid-cols-2">
+              <TabsTrigger value="findings">Замечания</TabsTrigger>
+              <TabsTrigger value="fields">Поля</TabsTrigger>
+            </TabsList>
+            <TabsContent value="findings" className="mt-0 min-h-0 flex-1">
+              <FindingsPanel
+                objectId={id}
+                packageId={packageId}
+                documents={pkg.documents}
+                ready={!!ready}
+                selectedDocumentId={selected?.id}
+                selectedFindingId={selectedFinding?.id}
+                onSelectFinding={handleSelectFinding}
+              />
+            </TabsContent>
+            <TabsContent value="fields" className="mt-0 min-h-0 flex-1 overflow-y-auto">
+              <FieldsPanel
+                documentId={selected?.id}
+                ready={selected?.status === 'done'}
+                selectedKey={selectedField?.key}
+                onSelectField={handleSelectField}
+              />
+            </TabsContent>
+          </Tabs>
         </Card>
       </div>
     </div>
