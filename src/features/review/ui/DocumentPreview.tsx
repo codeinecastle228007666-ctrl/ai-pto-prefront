@@ -3,6 +3,7 @@ import { Download, FileQuestion, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription, Button } from '@/shared'
 import { DocumentStatusBadge, type PackageDocument } from '@/entities/package'
 import { useDocumentFile } from '../api/documentsApi'
+import type { PdfHighlight } from './PdfViewer'
 
 // pdf.js тяжёлый — грузим только при открытии PDF
 const PdfViewer = lazy(() => import('./PdfViewer').then((m) => ({ default: m.PdfViewer })))
@@ -13,7 +14,14 @@ const Spinner = () => (
   </div>
 )
 
-export function DocumentPreview({ document }: { document: PackageDocument }) {
+interface DocumentPreviewProps {
+  document: PackageDocument
+  page?: number
+  highlights?: PdfHighlight[]
+  activeHighlightId?: string
+}
+
+export function DocumentPreview({ document, page, highlights, activeHighlightId }: DocumentPreviewProps) {
   const { data: file, isLoading, error } = useDocumentFile(document.id)
   const isPdf = document.mimeType === 'application/pdf'
 
@@ -43,7 +51,7 @@ export function DocumentPreview({ document }: { document: PackageDocument }) {
         )}
         {file && isPdf && (
           <Suspense fallback={<Spinner />}>
-            <PdfViewer fileUrl={file.url} />
+            <PdfViewer fileUrl={file.url} page={page} highlights={highlights} activeHighlightId={activeHighlightId} />
           </Suspense>
         )}
         {file && !isPdf && (

@@ -8,6 +8,7 @@ import type {
   Stage,
   StageState,
 } from '@/entities/package'
+import { ensureFindings, openCounts, resetMockFindings } from './findings'
 
 interface MockPackage {
   pkg: Package
@@ -126,11 +127,13 @@ function computeMockPackage(p: MockPackage): PackageDetail {
       }
     })
     const done = docProgress >= 1
+    if (done) ensureFindings(doc)
     return {
       ...doc,
       type: doneStages > 1 ? guessType(doc.fileName) : 'unknown',
       status: done ? 'done' : 'processing',
       stages,
+      findings: done ? openCounts(doc.id) : doc.findings,
     }
   })
 
@@ -145,7 +148,19 @@ export function getMockPackage(packageId: string): PackageDetail | null {
   return p ? computeMockPackage(p) : null
 }
 
+/** Документы пакета, по которым обработка завершена (для списка замечаний). */
+export function doneMockDocumentIds(packageId: string): string[] | null {
+  const pkg = getMockPackage(packageId)
+  return pkg ? pkg.documents.filter((d) => d.status === 'done').map((d) => d.id) : null
+}
+
+export function latestMockPackageId(objectId: string): string | null {
+  const list = [...packages.values()].filter((p) => p.pkg.objectId === objectId)
+  return list.at(-1)?.pkg.id ?? null
+}
+
 export function resetMockPackages() {
+  resetMockFindings()
   packages.clear()
   knownHashes.clear()
   uploaded.clear()

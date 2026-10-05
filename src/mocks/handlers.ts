@@ -8,8 +8,12 @@ import {
   findMockUserById,
 } from './data/auth'
 import type { PackageCreate } from '@/entities/package'
+import { listFindings, updateFinding } from './data/findings'
+import type { FindingUpdate } from '@/entities/finding'
 import {
   createMockPackage,
+  doneMockDocumentIds,
+  latestMockPackageId,
   getMockPackage,
   markMockUploaded,
   resetMockPackages,
@@ -291,6 +295,39 @@ export const handlers = [
     return pkg
       ? HttpResponse.json(pkg)
       : HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
+  }),
+
+  // === FINDINGS ===
+  http.get('/api/objects/:id/findings', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+    const query = new URL(request.url).searchParams
+    const packageId = query.get('packageId') ?? latestMockPackageId(String(params.id))
+    const documentIds = packageId ? doneMockDocumentIds(packageId) : []
+    if (!documentIds) return HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
+    return withDelay(() => HttpResponse.json(listFindings(documentIds, query)))
+  }),
+
+  http.patch('/api/findings/:id', async ({ request, params, cookies }) => {
+    const user = sessionUser(request, cookies)
+    if (!user) return unauthorized()
+    const body = (await request.json()) as FindingUpdate
+    return withDelay(() => {
+      const result = updateFinding(String(params.id), body, user.id)
+      if (result === 'not_found') {
+        return HttpResponse.json({ code: 'not_found', message: 'Замечание не найдено' }, { status: 404 })
+      }
+      if (result === 'comment_required') {
+        return HttpResponse.json(
+          {
+            code: 'validation_error',
+            message: 'Для отклонения замечания нужен комментарий',
+            details: [{ field: 'comment', message: 'required' }],
+          },
+          { status: 422 }
+        )
+      }
+      return HttpResponse.json(result)
+    })
   }),
 
   http.get('/api/documents/:id/file', async ({ request, cookies }) => {
