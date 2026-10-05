@@ -10,6 +10,8 @@ import {
 import type { PackageCreate } from '@/entities/package'
 import { getMockFields, updateMockFields } from './data/fields'
 import { listFindings, updateFinding } from './data/findings'
+import { createMockReport, getMockReport } from './data/reports'
+import type { ReportCreate } from '@/entities/report'
 import type { FindingUpdate } from '@/entities/finding'
 import {
   createMockPackage,
@@ -330,6 +332,41 @@ export const handlers = [
     const checklist = packageId ? getMockChecklist(packageId) : null
     if (!checklist) return HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
     return withDelay(() => HttpResponse.json(checklist))
+  }),
+
+  // === REPORTS ===
+  http.post('/api/packages/:id/reports', async ({ request, params, cookies }) => {
+    const user = sessionUser(request, cookies)
+    if (!user) return unauthorized()
+    const body = (await request.json().catch(() => ({}))) as ReportCreate
+    return withDelay(() => {
+      const pkg = getMockPackage(String(params.id))
+      if (!pkg) return HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
+      if (pkg.status !== 'done' && pkg.status !== 'partial') {
+        return HttpResponse.json({ code: 'conflict', message: 'Обработка пакета ещё не завершена' }, { status: 409 })
+      }
+      return HttpResponse.json(createMockReport(pkg.objectId, pkg.id, body, user.id), { status: 202 })
+    })
+  }),
+
+  http.get('/api/reports/:id', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+    const report = getMockReport(String(params.id))
+    return report
+      ? HttpResponse.json(report)
+      : HttpResponse.json({ code: 'not_found', message: 'Отчёт не найден' }, { status: 404 })
+  }),
+
+  http.get('/api/reports/:id/download', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+    const report = getMockReport(String(params.id))
+    if (!report) return HttpResponse.json({ code: 'not_found', message: 'Отчёт не найден' }, { status: 404 })
+    if (report.status !== 'ready') {
+      return HttpResponse.json({ code: 'conflict', message: 'Отчёт ещё не готов' }, { status: 409 })
+    }
+    // В моках отдаём тестовый PDF как содержимое отчёта
+    const pdf = await fetch('/mock-docs/sample.pdf').then((r) => r.arrayBuffer())
+    return new HttpResponse(pdf, { headers: { 'Content-Type': 'application/pdf' } })
   }),
 
   // === FINDINGS ===

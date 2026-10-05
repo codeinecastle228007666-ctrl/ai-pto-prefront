@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Loader2, MousePointerClick, Upload } from 'lucide-react'
+import { ArrowLeft, FileDown, Loader2, MousePointerClick, Upload } from 'lucide-react'
 import { usePackage } from '@/features/upload'
 import { DocumentPreview, DocumentTree, type PdfHighlight } from '@/features/review'
 import { FindingsPanel, SEVERITY_STYLES, useFindings } from '@/features/findings'
@@ -8,6 +9,7 @@ import type { ExtractedField } from '@/entities/package'
 
 const FIELD_HIGHLIGHT_COLOR = 'rgba(99, 102, 241, 0.3)'
 import { ChecklistPanel } from '@/features/checklist'
+import { ReportDialog } from '@/features/reports'
 import { FieldsPanel, useDocumentDetail } from '@/features/fields'
 import { Alert, AlertDescription, Button, Card, Progress, Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared'
 
@@ -17,6 +19,7 @@ export function PackagePage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: pkg, isLoading, error } = usePackage(packageId)
+  const [reportOpen, setReportOpen] = useState(false)
   const ready = pkg?.status === 'done' || pkg?.status === 'partial'
   const { data: findingsPage } = useFindings(id, packageId, ready)
   const { data: documentDetail } = useDocumentDetail(searchParams.get('doc') ?? undefined, ready)
@@ -93,7 +96,18 @@ export function PackagePage() {
             <span className="text-sm text-gray-500 tabular-nums">{progress}%</span>
           </div>
         )}
-        <Button asChild size="sm" className="ml-auto">
+        <Button
+          variant="outline"
+          size="sm"
+          className="ml-auto"
+          disabled={!ready}
+          title={ready ? undefined : 'Отчёт доступен после обработки пакета'}
+          onClick={() => setReportOpen(true)}
+        >
+          <FileDown className="h-4 w-4 mr-2" />
+          Отчёт
+        </Button>
+        <Button asChild size="sm">
           <Link to={`/objects/${id}/upload`}>
             <Upload className="h-4 w-4 mr-2" />
             Загрузить ещё
@@ -163,6 +177,8 @@ export function PackagePage() {
           </Tabs>
         </Card>
       </div>
+
+      <ReportDialog packageId={packageId} open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>
   )
 }

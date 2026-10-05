@@ -10,6 +10,7 @@ import type {
   StageState,
 } from '@/entities/package'
 import { resetMockFields } from './fields'
+import { resetMockReports } from './reports'
 import { ensureFindings, openCounts, resetMockFindings } from './findings'
 
 interface MockPackage {
@@ -200,6 +201,7 @@ export function getMockDocument(documentId: string): PackageDocument | null {
 export function resetMockPackages() {
   resetMockFindings()
   resetMockFields()
+  resetMockReports()
   packages.clear()
   knownHashes.clear()
   uploaded.clear()
