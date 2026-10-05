@@ -1,4 +1,4 @@
-import { http, HttpResponse, delay } from 'msw'
+import { http, HttpResponse, delay, sse } from 'msw'
 import type { ConstructionObject, ObjectStatus } from '@/entities/object'
 
 import {
@@ -12,6 +12,7 @@ import { getMockFields, updateMockFields } from './data/fields'
 import { listFindings, updateFinding } from './data/findings'
 import { createMockReport, getMockReport } from './data/reports'
 import type { ReportCreate } from '@/entities/report'
+import type { PackageEvent } from '@/entities/package'
 import type { FindingUpdate } from '@/entities/finding'
 import {
   createMockPackage,
@@ -332,6 +333,47 @@ export const handlers = [
     const checklist = packageId ? getMockChecklist(packageId) : null
     if (!checklist) return HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
     return withDelay(() => HttpResponse.json(checklist))
+  }),
+
+  // SSE прогресса обработки: snapshot, затем изменения этапов и прогресса, в конце package.done
+  sse<Record<PackageEvent['type'], PackageEvent>>('/api/packages/:id/events', ({ params, client }) => {
+    const send = (event: PackageEvent) => client.send({ event: event.type, data: JSON.stringify(event) as never })
+    const first = getMockPackage(String(params.id))
+    if (!first) return client.close()
+
+    send({ type: 'package.snapshot', package: first })
+    const seen = new Map(first.documents.flatMap((d) => Object.entries(d.stages).map(([s, v]) => [`${d.id}:${s}`, v.status] as const)))
+    let lastProgress = first.progress
+
+    const timer = setInterval(() => {
+      try {
+        tick()
+      } catch {
+        clearInterval(timer) // клиент отключился — поток закрыт
+      }
+    }, 600)
+
+    function tick() {
+      const pkg = getMockPackage(String(params.id))
+      if (!pkg) return clearInterval(timer)
+
+      for (const doc of pkg.documents) {
+        for (const [stage, state] of Object.entries(doc.stages)) {
+          if (seen.get(`${doc.id}:${stage}`) === state.status) continue
+          seen.set(`${doc.id}:${stage}`, state.status)
+          send({ type: 'document.stage', documentId: doc.id, stage: stage as never, status: state.status })
+        }
+      }
+      if (pkg.progress !== lastProgress) {
+        lastProgress = pkg.progress
+        send({ type: 'package.progress', progress: pkg.progress ?? 0 })
+      }
+      if (pkg.status === 'done' || pkg.status === 'partial' || pkg.status === 'failed') {
+        clearInterval(timer)
+        send({ type: 'package.done', status: pkg.status })
+        client.close()
+      }
+    }
   }),
 
   // === REPORTS ===
