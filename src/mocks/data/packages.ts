@@ -4,6 +4,7 @@ import type {
   PackageCreate,
   PackageCreated,
   PackageDetail,
+  Checklist,
   PackageDocument,
   Stage,
   StageState,
@@ -158,6 +159,34 @@ export function doneMockDocumentIds(packageId: string): string[] | null {
 export function latestMockPackageId(objectId: string): string | null {
   const list = [...packages.values()].filter((p) => p.pkg.objectId === objectId)
   return list.at(-1)?.pkg.id ?? null
+}
+
+// Обязательные документы для комплекта (в моках одинаковые для всех объектов)
+const REQUIRED: { type: DocumentType; title: string; required: number }[] = [
+  { type: 'aosr', title: 'Акты освидетельствования скрытых работ', required: 2 },
+  { type: 'general_work_log', title: 'Общий журнал работ', required: 1 },
+  { type: 'concrete_log', title: 'Журнал бетонных работ', required: 1 },
+  { type: 'material_passport', title: 'Паспорта материалов', required: 2 },
+  { type: 'as_built_scheme', title: 'Исполнительные схемы', required: 1 },
+]
+
+export function getMockChecklist(packageId: string): Checklist | null {
+  const pkg = getMockPackage(packageId)
+  if (!pkg) return null
+  const items = REQUIRED.map(({ type, title, required }) => {
+    const documentIds = pkg.documents.filter((d) => d.type === type && d.status === 'done').map((d) => d.id)
+    const found = documentIds.length
+    return {
+      documentType: type,
+      title,
+      required,
+      found,
+      status: found === 0 ? ('missing' as const) : found >= required ? ('complete' as const) : ('partial' as const),
+      documentIds,
+    }
+  })
+  const complete = items.filter((i) => i.status === 'complete').length
+  return { readiness: complete / items.length, items }
 }
 
 export function getMockDocument(documentId: string): PackageDocument | null {

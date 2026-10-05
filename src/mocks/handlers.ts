@@ -15,6 +15,7 @@ import {
   createMockPackage,
   doneMockDocumentIds,
   latestMockPackageId,
+  getMockChecklist,
   getMockDocument,
   getMockPackage,
   markMockUploaded,
@@ -321,6 +322,14 @@ export const handlers = [
       }
       return HttpResponse.json({ ...doc, fields: getMockFields(doc.id), lowConfidenceThreshold: 0.8 })
     })
+  }),
+
+  http.get('/api/objects/:id/checklist', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+    const packageId = new URL(request.url).searchParams.get('packageId') ?? latestMockPackageId(String(params.id))
+    const checklist = packageId ? getMockChecklist(packageId) : null
+    if (!checklist) return HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
+    return withDelay(() => HttpResponse.json(checklist))
   }),
 
   // === FINDINGS ===

@@ -7,6 +7,7 @@ import type { Finding } from '@/entities/finding'
 import type { ExtractedField } from '@/entities/package'
 
 const FIELD_HIGHLIGHT_COLOR = 'rgba(99, 102, 241, 0.3)'
+import { ChecklistPanel } from '@/features/checklist'
 import { FieldsPanel, useDocumentDetail } from '@/features/fields'
 import { Alert, AlertDescription, Button, Card, Progress, Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared'
 
@@ -127,9 +128,10 @@ export function PackagePage() {
 
         <Card className="h-[60vh] overflow-hidden lg:col-span-2 xl:col-span-1 xl:h-[calc(100vh-13rem)]">
           <Tabs defaultValue="findings" className="flex h-full min-h-0 flex-col">
-            <TabsList className="m-3 mb-0 grid grid-cols-2">
+            <TabsList className="m-3 mb-0 grid grid-cols-3">
               <TabsTrigger value="findings">Замечания</TabsTrigger>
               <TabsTrigger value="fields">Поля</TabsTrigger>
+              <TabsTrigger value="checklist">Комплект</TabsTrigger>
             </TabsList>
             <TabsContent value="findings" className="mt-0 min-h-0 flex-1">
               <FindingsPanel
@@ -148,6 +150,14 @@ export function PackagePage() {
                 ready={selected?.status === 'done'}
                 selectedKey={selectedField?.key}
                 onSelectField={handleSelectField}
+              />
+            </TabsContent>
+            <TabsContent value="checklist" className="mt-0 min-h-0 flex-1 overflow-y-auto">
+              <ChecklistPanel
+                objectId={id}
+                packageId={packageId}
+                ready={!!ready}
+                onSelectDocument={(docId) => setSearchParams({ doc: docId }, { replace: true })}
               />
             </TabsContent>
           </Tabs>

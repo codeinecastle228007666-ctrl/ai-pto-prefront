@@ -126,3 +126,22 @@ export interface DocumentDetail extends PackageDocument {
 }
 
 export const DEFAULT_LOW_CONFIDENCE_THRESHOLD = 0.8
+
+export type ChecklistStatus = 'missing' | 'partial' | 'complete'
+
+export interface ChecklistItem {
+  documentType: DocumentType
+  title: string
+  /** Сколько документов требуется */
+  required: number
+  /** Сколько найдено */
+  found: number
+  status: ChecklistStatus
+  documentIds: string[]
+}
+
+export interface Checklist {
+  /** 0..1 */
+  readiness: number
+  items: ChecklistItem[]
+}
