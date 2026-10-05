@@ -7,6 +7,14 @@ import {
   findMockUserByEmail,
   findMockUserById,
 } from './data/auth'
+import type { PackageCreate } from '@/entities/package'
+import {
+  createMockPackage,
+  getMockPackage,
+  markMockUploaded,
+  resetMockPackages,
+  startMockPackage,
+} from './data/packages'
 import {
   mockObjects,
   mockObjectTypes,
@@ -242,6 +250,49 @@ export const handlers = [
     })
   }),
 
+  // === PACKAGES / UPLOAD ===
+  http.post('/api/objects/:id/packages', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+
+    return withDelay(async () => {
+      if (!mockObjects.some((o) => o.id === params.id)) return notFound()
+      const body = (await request.json()) as PackageCreate
+      if (!body.files?.length) {
+        return HttpResponse.json({ code: 'validation_error', message: 'Нужен хотя бы один файл' }, { status: 422 })
+      }
+      return HttpResponse.json(createMockPackage(String(params.id), body), { status: 201 })
+    })
+  }),
+
+  // Имитация presigned PUT в объектное хранилище (без авторизации, как у S3)
+  http.put('/api/__mocks__/upload/:documentId', async ({ params }) => {
+    await delay(400)
+    return markMockUploaded(String(params.documentId))
+      ? new HttpResponse(null, { status: 200 })
+      : new HttpResponse(null, { status: 404 })
+  }),
+
+  http.post('/api/packages/:id/start', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+
+    return withDelay(() => {
+      const result = startMockPackage(String(params.id))
+      if (result === 'not_found') return HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
+      if (result === 'not_uploaded') {
+        return HttpResponse.json({ code: 'conflict', message: 'Загружены не все файлы' }, { status: 409 })
+      }
+      return HttpResponse.json(result, { status: 202 })
+    })
+  }),
+
+  http.get('/api/packages/:id', async ({ request, params, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+    const pkg = getMockPackage(String(params.id))
+    return pkg
+      ? HttpResponse.json(pkg)
+      : HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
+  }),
+
   // === CATALOGS ===
   http.get('/api/object-types', async ({ request, cookies }) => {
     if (!sessionUser(request, cookies)) return unauthorized()
@@ -262,6 +313,7 @@ export const handlers = [
   http.post('/api/__mocks__/reset', async () => {
     return withDelay(() => {
       resetMockObjects()
+      resetMockPackages()
       return HttpResponse.json({ ok: true })
     })
   }),

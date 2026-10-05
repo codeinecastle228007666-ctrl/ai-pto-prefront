@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { AxiosError } from 'axios'
-import { ArrowLeft, Edit, Archive, Loader2 } from 'lucide-react'
+import { ArrowLeft, Edit, Archive, Loader2, Upload } from 'lucide-react'
 import {
   useObject,
   useArchiveObject,
@@ -100,7 +100,13 @@ export function ObjectDetailPage() {
             </Button>
           )}
           {!isArchived && (
-            <Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${object.id}/edit`)}>
+            <Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${object.id}/upload`)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Загрузить документы
+            </Button>
+          )}
+          {!isArchived && (
+            <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${object.id}/edit`)}>
               <Edit className="h-4 w-4 mr-2" />
               Изменить
             </Button>
