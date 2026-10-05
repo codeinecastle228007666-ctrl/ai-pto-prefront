@@ -293,6 +293,17 @@ export const handlers = [
       : HttpResponse.json({ code: 'not_found', message: 'Пакет не найден' }, { status: 404 })
   }),
 
+  http.get('/api/documents/:id/file', async ({ request, cookies }) => {
+    if (!sessionUser(request, cookies)) return unauthorized()
+    return withDelay(() =>
+      HttpResponse.json({
+        // В моках для любого документа отдаём один тестовый PDF
+        url: '/mock-docs/sample.pdf',
+        expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+      })
+    )
+  }),
+
   // === CATALOGS ===
   http.get('/api/object-types', async ({ request, cookies }) => {
     if (!sessionUser(request, cookies)) return unauthorized()
