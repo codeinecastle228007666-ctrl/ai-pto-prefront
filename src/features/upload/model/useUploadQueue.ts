@@ -9,7 +9,7 @@ import {
 import { packagesApi, uploadToStorage } from '../api/packagesApi'
 import { sha256Hex } from './sha256'
 
-export type UploadItemStatus = 'queued' | 'uploading' | 'uploaded' | 'error'
+export type UploadItemStatus = 'queued' | 'uploading' | 'uploaded' | 'duplicate' | 'error'
 
 export interface UploadItem {
   id: string
@@ -95,6 +95,10 @@ export function useUploadQueue(objectId: string) {
     await runPool(list, async (item) => {
       const target = targetsRef.current.get(item.id)
       if (!target) return
+      if (!target.url) {
+        update(item.id, { status: 'duplicate', progress: 100, error: undefined })
+        return
+      }
       update(item.id, { status: 'uploading', progress: 0, error: undefined })
       try {
         await uploadToStorage(target, item.file, (progress) => update(item.id, { progress }))

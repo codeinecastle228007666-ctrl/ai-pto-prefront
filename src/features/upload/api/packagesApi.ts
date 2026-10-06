@@ -29,6 +29,7 @@ export async function uploadToStorage(
   onProgress: (percent: number) => void,
   signal?: AbortSignal
 ): Promise<void> {
+  if (!target.url) return
   // Content-Type должен совпадать с mimeType, переданным при создании пакета
   await axios.put(target.url, file, {
     headers: { 'Content-Type': file.type },

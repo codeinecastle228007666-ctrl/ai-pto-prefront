@@ -35,7 +35,7 @@ export interface PackageCreateFile {
   fileName: string
   mimeType: AllowedMimeType
   sizeBytes: number
-  /** Необязательно: start сверит хеш загруженного объекта */
+  /** Необязательно: по хешу определяется дубликат, а start сверит хеш загруженного объекта */
   sha256?: string
 }
 
@@ -54,9 +54,11 @@ export interface Package {
 
 export interface UploadTarget {
   documentId: string
-  /** Временная ссылка для PUT в хранилище */
-  url: string
-  objectKey: string
+  /** Временная ссылка для PUT в хранилище. null — файл дубликат, загружать не нужно */
+  url: string | null
+  objectKey: string | null
+  /** Документ с тем же sha256 уже есть в организации */
+  duplicateOf?: string | null
 }
 
 export interface PackageCreated {
