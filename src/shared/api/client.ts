@@ -6,7 +6,9 @@ import {
   isMockMode,
 } from './mockSession'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api'
+// В режиме моков всегда относительный /api: обработчики MSW описаны относительно origin,
+// и абсолютный VITE_API_URL (например, из CI) увёл бы запросы мимо них в реальную сеть.
+const API_BASE_URL = isMockMode() ? '/api' : import.meta.env.VITE_API_URL || '/api'
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
