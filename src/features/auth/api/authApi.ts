@@ -1,5 +1,5 @@
 import { api, ENDPOINTS } from '@/shared'
-import type { UserWithOrg } from '@/entities/user'
+import type { User } from '@/entities/user'
 
 export interface LoginRequest {
   email: string
@@ -15,8 +15,8 @@ export const authApi = {
     await api.post(ENDPOINTS.auth.logout)
   },
 
-  me: async (): Promise<UserWithOrg> => {
-    const response = await api.get<UserWithOrg>(ENDPOINTS.auth.me)
+  me: async (): Promise<User> => {
+    const response = await api.get<User>(ENDPOINTS.auth.me)
     return response.data
   },
 }

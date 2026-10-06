@@ -1,10 +1,15 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
 import { useApiQuery, useApiMutation, queryKeys } from '@/shared'
 import { objectsApi, catalogsApi, type ObjectWriteBody, type ObjectStatusTransition } from './objectsApi'
-import type { ObjectListParams } from '@/entities/object'
+import type { ConstructionObject, ObjectListParams, ObjectListResponse } from '@/entities/object'
+import { applyListParams } from '../model/applyListParams'
 
 export function useObjects(params: ObjectListParams = {}) {
-  return useApiQuery(queryKeys.objects.list(params), () => objectsApi.getList(params), {
+  return useQuery<ConstructionObject[], AxiosError, ObjectListResponse>({
+    queryKey: queryKeys.objects.list({ includeArchived: !!params.includeArchived }),
+    queryFn: () => objectsApi.getList(params),
+    select: (items) => applyListParams(items, params),
     placeholderData: (previous) => previous,
   })
 }

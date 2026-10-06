@@ -11,6 +11,8 @@ import { ObjectsPage } from '@/pages/objects'
 import { ObjectDetailPage } from '@/pages/object-detail'
 import { ObjectEditPage } from '@/pages/object-edit'
 import { ObjectCreatePage } from '@/pages/object-new'
+import { UploadPage } from '@/pages/upload'
+import { PackagePage } from '@/pages/package'
 import { ProfilePage } from '@/pages/profile'
 import { LandingPage } from '@/pages/landing'
 
@@ -50,6 +52,8 @@ export function AppRouter() {
               <Route path="/objects/new" element={<ObjectCreatePage />} />
               <Route path="/objects/:id" element={<ObjectDetailPage />} />
               <Route path="/objects/:id/edit" element={<ObjectEditPage />} />
+              <Route path="/objects/:id/upload" element={<UploadPage />} />
+              <Route path="/objects/:id/packages/:packageId" element={<PackagePage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

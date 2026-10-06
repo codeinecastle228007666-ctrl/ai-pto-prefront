@@ -9,8 +9,6 @@ export const objectSchema = z.object({
   description: z.string().optional(),
   customerOrganizationId: z.string().optional(),
   contractorOrganizationId: z.string().optional(),
-  startDate: z.string().optional(),
-  plannedEndDate: z.string().optional(),
 })
 
 export type ObjectFormData = z.infer<typeof objectSchema>

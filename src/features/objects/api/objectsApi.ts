@@ -2,11 +2,10 @@ import { api, ENDPOINTS } from '@/shared'
 import type {
   ConstructionObject,
   ObjectListParams,
-  ObjectListResponse,
   ObjectStatus,
   ObjectType,
   WorkType,
-  OrganizationRef,
+  Counterparty,
 } from '@/entities/object'
 
 export type ObjectWriteBody = {
@@ -18,15 +17,13 @@ export type ObjectWriteBody = {
   description?: string
   customerOrganizationId?: string
   contractorOrganizationId?: string
-  startDate?: string
-  plannedEndDate?: string
 }
 
 export type ObjectStatusTransition = Exclude<ObjectStatus, 'archived'>
 
 function cleanBody(data: ObjectWriteBody): ObjectWriteBody {
   const out: ObjectWriteBody = { ...data }
-  ;(['address', 'description', 'customerOrganizationId', 'contractorOrganizationId', 'startDate', 'plannedEndDate'] as const).forEach(
+  ;(['address', 'description', 'customerOrganizationId', 'contractorOrganizationId'] as const).forEach(
     (key) => {
       if (out[key] === '') delete out[key]
     }
@@ -35,20 +32,11 @@ function cleanBody(data: ObjectWriteBody): ObjectWriteBody {
 }
 
 export const objectsApi = {
-  getList: async (params: ObjectListParams = {}): Promise<ObjectListResponse> => {
-    const searchParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === undefined || value === null || value === '' || value === false) return
-      if (Array.isArray(value)) {
-        value.forEach((v) => searchParams.append(key, v))
-      } else {
-        searchParams.set(key, String(value))
-      }
+  // Бэк: GET /objects → массив (серверный фильтр только includeArchived).
+  getList: async (params: ObjectListParams = {}): Promise<ConstructionObject[]> => {
+    const response = await api.get<ConstructionObject[]>(ENDPOINTS.objects.list, {
+      params: params.includeArchived ? { includeArchived: true } : undefined,
     })
-    const query = searchParams.toString()
-    const response = await api.get<ObjectListResponse>(
-      query ? `${ENDPOINTS.objects.list}?${query}` : ENDPOINTS.objects.list
-    )
     return response.data
   },
 
@@ -89,8 +77,8 @@ export const catalogsApi = {
     return response.data
   },
 
-  getCounterparties: async (): Promise<OrganizationRef[]> => {
-    const response = await api.get<OrganizationRef[]>(ENDPOINTS.catalogs.counterparties)
+  getCounterparties: async (): Promise<Counterparty[]> => {
+    const response = await api.get<Counterparty[]>(ENDPOINTS.catalogs.counterparties)
     return response.data
   },
 }

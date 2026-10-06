@@ -1,26 +1,24 @@
 export type ObjectStatus = 'draft' | 'active' | 'on_hold' | 'completed' | 'archived'
 
-export interface ObjectType {
+export interface ObjectGroupRef {
   id: string
-  groupId: string
   code: string
   name: string
-  description?: string
-  active: boolean
 }
 
-export interface ObjectGroup {
+export interface ObjectType {
   id: string
   code: string
   name: string
-  description?: string
-  active: boolean
+  description?: string | null
+  group: ObjectGroupRef
 }
 
 export interface WorkType {
   id: string
   code: string
   name: string
+  description?: string | null
 }
 
 export interface OrganizationRef {
@@ -28,36 +26,27 @@ export interface OrganizationRef {
   name: string
 }
 
+export interface Counterparty extends OrganizationRef {
+  slug: string
+}
+
 export interface ConstructionObject {
   id: string
-  organizationId: string
   code: string
   name: string
-  address?: string
-  objectTypeId: string
-  customerOrganizationId?: string
-  contractorOrganizationId?: string
+  address: string | null
   status: ObjectStatus
-  description?: string
-  startDate?: string
-  plannedEndDate?: string
-  actualEndDate?: string
-  createdById: string
+  description: string | null
+  objectType: ObjectType
+  customer: OrganizationRef | null
+  contractor: OrganizationRef | null
+  workTypes: WorkType[]
+  startDate: string | null
+  plannedEndDate: string | null
+  actualEndDate: string | null
   createdAt: string
   updatedAt: string
-  archivedAt?: string
-
-  // Relations (populated in detail)
-  objectType?: ObjectType
-  customerOrganization?: OrganizationRef
-  contractorOrganization?: OrganizationRef
-  workTypes?: WorkType[]
-  _count?: {
-    packages: number
-    findings: number
-  }
-  readiness?: number
-  lastCheckedAt?: string
+  archivedAt: string | null
 }
 
 export type ObjectSortBy =
@@ -66,8 +55,6 @@ export type ObjectSortBy =
   | 'address'
   | 'createdAt'
   | 'updatedAt'
-  | 'readiness'
-  | 'lastCheckedAt'
   | 'status'
   | 'objectTypeId'
   | 'customerOrganizationId'

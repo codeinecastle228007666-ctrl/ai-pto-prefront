@@ -3,7 +3,7 @@ import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { AxiosError } from 'axios'
 import { Alert, AlertDescription, Button, Card, CardContent, CardHeader, CardTitle } from '@/shared'
-import type { ConstructionObject, ObjectType, OrganizationRef, WorkType } from '@/entities/object'
+import type { ConstructionObject, ObjectType, Counterparty, WorkType } from '@/entities/object'
 import { objectSchema, type ObjectFormData } from '../model/objectSchema'
 import { toFormDefaults } from '../model/toFormDefaults'
 import { ObjectFormFields } from './ObjectFormFields'
@@ -14,7 +14,7 @@ interface ObjectFormViewProps {
   object?: ConstructionObject | null
   objectTypes: ObjectType[]
   workTypes: WorkType[]
-  counterparties: OrganizationRef[]
+  counterparties: Counterparty[]
   isSubmitting: boolean
   onSubmit: (data: ObjectFormData) => Promise<void>
   onCancel: () => void

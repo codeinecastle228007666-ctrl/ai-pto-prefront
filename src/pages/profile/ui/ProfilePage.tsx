@@ -6,14 +6,13 @@ import { Avatar, AvatarFallback, Badge, Button, Card, CardContent, CardHeader, C
 export function ProfilePage() {
   const user = useUser()
   const logoutMutation = useLogout()
-  const role = user?.membership?.role
+  const role = user?.role
   const roleLabel = role ? ROLE_LABELS[role] ?? role : '—'
 
   const rows: { label: string; value: string }[] = [
     { label: 'Email', value: user?.email || '—' },
     { label: 'Имя', value: user?.name || '—' },
     { label: 'Роль', value: roleLabel },
-    { label: 'Организация', value: user?.organization?.name || '—' },
   ]
 
   return (

@@ -85,7 +85,7 @@ export function useObjectsColumns({
         <span className="text-gray-500 block max-w-[200px] truncate">{row.original.address || '—'}</span>
       ),
     }),
-    columnHelper.accessor((row) => row.customerOrganization?.name ?? '', {
+    columnHelper.accessor((row) => row.customer?.name ?? '', {
       id: 'customerOrganizationId',
       header: () => (
         <ColumnFilterPopup
@@ -97,11 +97,11 @@ export function useObjectsColumns({
         />
       ),
       cell: ({ row }) => (
-        <span className="text-gray-500">{row.original.customerOrganization?.name || '—'}</span>
+        <span className="text-gray-500">{row.original.customer?.name || '—'}</span>
       ),
       enableSorting: true,
     }),
-    columnHelper.accessor((row) => row.contractorOrganization?.name ?? '', {
+    columnHelper.accessor((row) => row.contractor?.name ?? '', {
       id: 'contractorOrganizationId',
       header: () => (
         <ColumnFilterPopup
@@ -113,7 +113,7 @@ export function useObjectsColumns({
         />
       ),
       cell: ({ row }) => (
-        <span className="text-gray-500">{row.original.contractorOrganization?.name || '—'}</span>
+        <span className="text-gray-500">{row.original.contractor?.name || '—'}</span>
       ),
       enableSorting: true,
     }),

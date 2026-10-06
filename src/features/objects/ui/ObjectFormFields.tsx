@@ -1,6 +1,6 @@
 import { useFormContext, Controller } from 'react-hook-form'
 import { Input, Label, Textarea, Select, SelectTrigger, SelectValue, SelectContent, SelectItem, Badge } from '@/shared'
-import type { ObjectType, WorkType, OrganizationRef } from '@/entities/object'
+import type { ObjectType, WorkType, Counterparty } from '@/entities/object'
 import type { ObjectFormData } from '../model/objectSchema'
 
 const NONE = '__none__'
@@ -13,7 +13,7 @@ function FieldError({ message }: { message?: string }) {
 interface ObjectFormFieldsProps {
   objectTypes: ObjectType[]
   workTypes: WorkType[]
-  counterparties: OrganizationRef[]
+  counterparties: Counterparty[]
 }
 
 /** Поля формы объекта (создание и редактирование), stage-1. */
@@ -105,17 +105,6 @@ export function ObjectFormFields({ objectTypes, workTypes, counterparties }: Obj
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="startDate">Дата начала</Label>
-          <Input id="startDate" type="date" {...register('startDate')} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="plannedEndDate">Плановая дата окончания</Label>
-          <Input id="plannedEndDate" type="date" {...register('plannedEndDate')} />
-        </div>
-      </div>
-
       <div className="space-y-2">
         <Label htmlFor="description">Описание</Label>
         <Textarea id="description" rows={3} {...register('description')} />
@@ -133,7 +122,7 @@ function CounterpartySelect({
   name: 'customerOrganizationId' | 'contractorOrganizationId'
   label: string
   placeholder: string
-  counterparties: OrganizationRef[]
+  counterparties: Counterparty[]
 }) {
   const { control } = useFormContext<ObjectFormData>()
   return (
