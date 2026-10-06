@@ -120,7 +120,8 @@ function computeMockPackage(p: MockPackage): PackageDetail {
     if (doc.mimeType === 'text/csv') {
       return { ...doc, status: 'needs_ocr' }
     }
-    const docProgress = Math.min(1, Math.max(0, progress * 1.3 - i * 0.05))
+    // Документы заканчиваются в разное время (по мере обработки), к концу пакета готовы все
+    const docProgress = finished ? 1 : Math.min(1, Math.max(0, progress * 1.6 - i * 0.2))
     const doneStages = Math.floor(docProgress * STAGES.length)
     const stages: Partial<Record<Stage, StageState>> = {}
     STAGES.forEach((stage, idx) => {

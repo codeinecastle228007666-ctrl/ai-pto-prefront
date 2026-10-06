@@ -22,8 +22,10 @@ interface FindingsPanelProps {
   objectId: string
   packageId: string
   documents: PackageDocument[]
-  /** Обработка завершена — до этого замечаний ещё нет */
+  /** Хотя бы один документ обработан — до этого замечаний ещё нет */
   ready: boolean
+  /** Пакет ещё обрабатывается: появятся замечания других документов */
+  processing?: boolean
   selectedDocumentId?: string
   selectedFindingId?: string
   onSelectFinding: (finding: Finding) => void
@@ -34,6 +36,7 @@ export function FindingsPanel({
   packageId,
   documents,
   ready,
+  processing,
   selectedDocumentId,
   selectedFindingId,
   onSelectFinding,
@@ -136,7 +139,13 @@ export function FindingsPanel({
         {!ready && (
           <p className="flex items-center gap-2 text-sm text-gray-500">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Идёт обработка — замечания появятся по её завершении.
+            Идёт обработка — замечания появятся, как только будет готов первый документ.
+          </p>
+        )}
+        {ready && processing && (
+          <p className="mb-3 flex items-center gap-2 text-xs text-gray-500">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Обработка продолжается — замечания других документов появятся по мере готовности.
           </p>
         )}
         {ready && isLoading && <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary-600" />}

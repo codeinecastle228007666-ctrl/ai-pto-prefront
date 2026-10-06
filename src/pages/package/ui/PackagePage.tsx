@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, FileDown, Loader2, MousePointerClick, Upload } from 'lucide-react'
 import { usePackage } from '@/features/upload'
@@ -20,9 +21,23 @@ export function PackagePage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { data: pkg, isLoading, error } = usePackage(packageId)
   const [reportOpen, setReportOpen] = useState(false)
-  const ready = pkg?.status === 'done' || pkg?.status === 'partial'
-  const { data: findingsPage } = useFindings(id, packageId, ready)
-  const { data: documentDetail } = useDocumentDetail(searchParams.get('doc') ?? undefined, ready)
+  const docId = searchParams.get('doc') ?? undefined
+  // Документы обрабатываются независимо: результаты доступны по мере готовности, а не после всего пакета
+  const doneCount = pkg?.documents.filter((d) => d.status === 'done').length ?? 0
+  const hasResults = doneCount > 0
+  const processing = pkg?.status === 'queued' || pkg?.status === 'processing'
+  const finished = pkg?.status === 'done' || pkg?.status === 'partial'
+  const docReady = !!pkg?.documents.some((d) => d.id === docId && d.status === 'done')
+  const queryClient = useQueryClient()
+  const { data: findingsPage } = useFindings(id, packageId, hasResults)
+  const { data: documentDetail } = useDocumentDetail(docId, docReady)
+
+  // Появился готовый документ — подтягиваем его замечания и обновляем комплект
+  useEffect(() => {
+    if (doneCount === 0) return
+    void queryClient.invalidateQueries({ queryKey: ['findings'] })
+    void queryClient.invalidateQueries({ queryKey: ['checklist'] })
+  }, [doneCount, queryClient])
 
   if (isLoading) {
     return (
@@ -81,7 +96,6 @@ export function PackagePage() {
     else setSearchParams({ doc: f.documentId, finding: f.id }, { replace: true })
   }
   const progress = pkg.progress !== undefined ? Math.round(pkg.progress * 100) : undefined
-  const processing = ['queued', 'processing'].includes(pkg.status)
 
   return (
     <div className="space-y-4">
@@ -100,8 +114,8 @@ export function PackagePage() {
           variant="outline"
           size="sm"
           className="ml-auto"
-          disabled={!ready}
-          title={ready ? undefined : 'Отчёт доступен после обработки пакета'}
+          disabled={!finished}
+          title={finished ? undefined : 'Отчёт доступен, когда обработаны все документы пакета'}
           onClick={() => setReportOpen(true)}
         >
           <FileDown className="h-4 w-4 mr-2" />
@@ -152,7 +166,8 @@ export function PackagePage() {
                 objectId={id}
                 packageId={packageId}
                 documents={pkg.documents}
-                ready={!!ready}
+                ready={hasResults}
+                processing={processing}
                 selectedDocumentId={selected?.id}
                 selectedFindingId={selectedFinding?.id}
                 onSelectFinding={handleSelectFinding}
@@ -170,7 +185,8 @@ export function PackagePage() {
               <ChecklistPanel
                 objectId={id}
                 packageId={packageId}
-                ready={!!ready}
+                ready={hasResults}
+                provisional={processing}
                 onSelectDocument={(docId) => setSearchParams({ doc: docId }, { replace: true })}
               />
             </TabsContent>

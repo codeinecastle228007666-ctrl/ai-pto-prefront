@@ -12,7 +12,12 @@ import { getMockFields, updateMockFields } from './data/fields'
 import { listFindings, updateFinding } from './data/findings'
 import { createMockReport, getMockReport } from './data/reports'
 import type { ReportCreate } from '@/entities/report'
-import { FINISHED_PACKAGE_STATUSES, type PackageProgressEvent } from '@/entities/package'
+import {
+  FINISHED_PACKAGE_STATUSES,
+  type DocumentStageEvent,
+  type PackageProgressEvent,
+  type Stage,
+} from '@/entities/package'
 import type { FindingUpdate } from '@/entities/finding'
 import {
   createMockPackage,
@@ -335,39 +340,59 @@ export const handlers = [
     return withDelay(() => HttpResponse.json(checklist))
   }),
 
-  // SSE прогресса: сразу текущее состояние, дальше событие `progress` при каждом изменении, в конце закрытие
-  sse<{ progress: PackageProgressEvent }>('/api/packages/:id/events', ({ params, client }) => {
-    const packageId = String(params.id)
-    let last = ''
+  // SSE: сразу текущее состояние пакета, дальше `progress` и `document.stage` при каждом изменении
+  sse<{ progress: PackageProgressEvent; 'document.stage': DocumentStageEvent }>(
+    '/api/packages/:id/events',
+    ({ params, client }) => {
+      const packageId = String(params.id)
+      const seenStages = new Map<string, string>()
+      let seenProgress = ''
 
-    function tick(): boolean {
-      const pkg = getMockPackage(packageId)
-      if (!pkg) {
-        client.close()
-        return true
+      function tick(): boolean {
+        const pkg = getMockPackage(packageId)
+        if (!pkg) {
+          client.close()
+          return true
+        }
+
+        for (const doc of pkg.documents) {
+          for (const [stage, state] of Object.entries(doc.stages)) {
+            const key = `${doc.id}:${stage}`
+            if (seenStages.get(key) === state.status) continue
+            seenStages.set(key, state.status)
+            client.send({
+              event: 'document.stage',
+              data: { type: 'document.stage', packageId, documentId: doc.id, stage: stage as Stage, status: state.status },
+            })
+          }
+        }
+
+        const progress = `${pkg.status}:${(pkg.progress ?? 0).toFixed(2)}`
+        if (progress !== seenProgress) {
+          seenProgress = progress
+          client.send({
+            event: 'progress',
+            data: { type: 'progress', packageId, status: pkg.status, progress: pkg.progress ?? 0 },
+          })
+        }
+
+        if (FINISHED_PACKAGE_STATUSES.includes(pkg.status)) {
+          client.close()
+          return true
+        }
+        return false
       }
-      const event: PackageProgressEvent = { packageId, status: pkg.status, progress: pkg.progress ?? 0 }
-      const key = `${event.status}:${event.progress.toFixed(2)}`
-      if (key !== last) {
-        last = key
-        client.send({ event: 'progress', data: event })
-      }
-      if (FINISHED_PACKAGE_STATUSES.includes(pkg.status)) {
-        client.close()
-        return true
-      }
-      return false
+
+      if (tick()) return
+      const timer = setInterval(() => {
+        try {
+          if (tick()) clearInterval(timer)
+        } catch {
+          clearInterval(timer) // клиент отключился — поток закрыт
+        }
+      }, 500)
     }
-
-    if (tick()) return
-    const timer = setInterval(() => {
-      try {
-        if (tick()) clearInterval(timer)
-      } catch {
-        clearInterval(timer) // клиент отключился — поток закрыт
-      }
-    }, 600)
-  }),
+  ),
 
   // === REPORTS ===
   http.post('/api/packages/:id/reports', async ({ request, params, cookies }) => {

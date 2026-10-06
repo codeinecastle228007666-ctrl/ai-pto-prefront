@@ -4,11 +4,12 @@ import type { AxiosError } from 'axios'
 import { api } from '@/shared'
 import {
   FINISHED_PACKAGE_STATUSES,
-  PACKAGE_PROGRESS_EVENT,
+  LAST_STAGE,
+  PACKAGE_EVENT_TYPES,
   type PackageDetail,
-  type PackageProgressEvent,
+  type PackageEvent,
 } from '@/entities/package'
-import { applyProgressEvent } from '../model/applyPackageEvent'
+import { applyDocumentStage, applyProgressEvent } from '../model/applyPackageEvent'
 import { packagesApi } from './packagesApi'
 
 const ACTIVE_STATUSES = ['uploading', 'queued', 'processing']
@@ -44,27 +45,33 @@ export function usePackage(packageId: string) {
     source.onopen = () => setLive(true)
     source.onerror = () => setLive(false) // браузер переподключится сам, пока работает поллинг
 
+    const refetchPackage = () => queryClient.invalidateQueries({ queryKey: packageKey(packageId) })
+
     const handle = (message: MessageEvent<string>) => {
-      let event: PackageProgressEvent
+      let event: PackageEvent
       try {
-        event = JSON.parse(message.data) as PackageProgressEvent
+        event = JSON.parse(message.data) as PackageEvent
       } catch {
         return
       }
-      queryClient.setQueryData<PackageDetail>(packageKey(packageId), (prev) => applyProgressEvent(prev, event))
-      // Истина о документах и этапах — GET пакета: перечитываем по каждому событию
-      queryClient.invalidateQueries({ queryKey: packageKey(packageId) })
 
+      if (event.type === 'document.stage') {
+        queryClient.setQueryData<PackageDetail>(packageKey(packageId), (prev) => applyDocumentStage(prev, event))
+        // документ закончил обработку (или упал): его статус и счётчики берём из GET пакета
+        if (event.status === 'failed' || (event.stage === LAST_STAGE && event.status === 'succeeded')) {
+          void refetchPackage()
+        }
+        return
+      }
+
+      queryClient.setQueryData<PackageDetail>(packageKey(packageId), (prev) => applyProgressEvent(prev, event))
       if (FINISHED_PACKAGE_STATUSES.includes(event.status)) {
         source.close()
         setLive(false)
-        // результаты обработки: замечания, поля, комплектность
-        queryClient.invalidateQueries({ queryKey: ['findings'] })
-        queryClient.invalidateQueries({ queryKey: ['checklist'] })
-        queryClient.invalidateQueries({ queryKey: ['documents'] })
+        void refetchPackage()
       }
     }
-    source.addEventListener(PACKAGE_PROGRESS_EVENT, handle as EventListener)
+    PACKAGE_EVENT_TYPES.forEach((type) => source.addEventListener(type, handle as EventListener))
 
     return () => {
       source.close()

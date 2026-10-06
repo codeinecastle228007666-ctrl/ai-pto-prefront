@@ -148,13 +148,29 @@ export interface Checklist {
   items: ChecklistItem[]
 }
 
-/** Событие SSE `progress` из GET /packages/{id}/events. Состав документов и этапов — в GET /packages/{id}. */
+/** SSE `progress`: изменился статус или общий прогресс пакета. */
 export interface PackageProgressEvent {
+  type: 'progress'
   packageId: string
   status: PackageStatus
   progress: number
 }
 
-export const PACKAGE_PROGRESS_EVENT = 'progress'
+/** SSE `document.stage`: изменился статус этапа конкретного документа. */
+export interface DocumentStageEvent {
+  type: 'document.stage'
+  packageId: string
+  documentId: string
+  stage: Stage
+  status: StageStatus
+  error?: { code: string; message: string }
+}
+
+export type PackageEvent = PackageProgressEvent | DocumentStageEvent
+
+export const PACKAGE_EVENT_TYPES = ['progress', 'document.stage'] as const
 
 export const FINISHED_PACKAGE_STATUSES: PackageStatus[] = ['done', 'partial', 'failed']
+
+/** Последний этап пайплайна: после него документ считается готовым. */
+export const LAST_STAGE: Stage = 'explain'

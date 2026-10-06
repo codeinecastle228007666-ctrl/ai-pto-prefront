@@ -12,16 +12,18 @@ const STATUS_VIEW: Record<ChecklistStatus, { label: string; icon: typeof CheckCi
 interface ChecklistPanelProps {
   objectId: string
   packageId: string
-  /** Обработка завершена — до этого комплектность считать рано */
+  /** Хотя бы один документ обработан — до этого комплектность считать рано */
   ready: boolean
+  /** Пакет ещё обрабатывается: значения предварительные */
+  provisional?: boolean
   onSelectDocument: (documentId: string) => void
 }
 
-export function ChecklistPanel({ objectId, packageId, ready, onSelectDocument }: ChecklistPanelProps) {
+export function ChecklistPanel({ objectId, packageId, ready, provisional, onSelectDocument }: ChecklistPanelProps) {
   const { data, isLoading, error } = useChecklist(objectId, packageId, ready)
 
   if (!ready) {
-    return <p className="p-6 text-center text-sm text-gray-500">Комплектность считается после обработки пакета</p>
+    return <p className="p-6 text-center text-sm text-gray-500">Комплектность считается, как только будет обработан первый документ</p>
   }
   if (isLoading) return <Loader2 className="mx-auto mt-6 h-6 w-6 animate-spin text-primary-600" />
   if (error || !data) {
@@ -37,6 +39,11 @@ export function ChecklistPanel({ objectId, packageId, ready, onSelectDocument }:
   const readiness = Math.round(data.readiness * 100)
   return (
     <div className="space-y-3 overflow-y-auto p-3">
+      {provisional && (
+        <p className="rounded bg-blue-50 px-2 py-1.5 text-xs text-blue-700">
+          Проверка идёт — данные предварительные, обновятся по мере обработки документов.
+        </p>
+      )}
       <div>
         <div className="mb-1 flex items-baseline justify-between text-sm">
           <span className="font-medium text-gray-900">Готовность комплекта</span>
