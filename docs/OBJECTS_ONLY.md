@@ -50,6 +50,20 @@
 Полный продукт = лендинг + кабинет.  
 `objects_only` — только кабинетный контур списка объектов и пайплайна загрузки/проверки, удобный для ревью и демо мок-пайплайна.
 
+## Render
+
+Прод-демо: [https://objectsonly.onrender.com](https://objectsonly.onrender.com)  
+Сервис Static Site, ветка `objects-only`, конфиг — [`render.yaml`](../render.yaml).
+
+| Параметр | Значение |
+| --- | --- |
+| Build | `npm install && npm run build` |
+| Publish | `./dist` |
+| SPA rewrite | `/*` → `/index.html` |
+| Build env | `VITE_USE_MOCKS=true`, `VITE_APP_NAME=ПТО-Doc` |
+
+Если в консоли `Refused to apply style … MIME type ('text/plain')` и 404 на `/assets/*` — браузер получил тело 404 вместо CSS/JS (у Render часто `text/plain`). Обычно это сразу после деплоя, пока CDN не раздал новые ассеты: hard refresh / подождать / Manual Deploy. Publish path при этом уже `dist`.
+
 ## Коммиты-шаги (ветка `objects-only`)
 
 1. `chore | router: корень / ведёт на /objects, лендинг убран из роутов`

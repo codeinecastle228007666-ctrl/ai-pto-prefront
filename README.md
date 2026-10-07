@@ -32,6 +32,11 @@ npm run dev
 - `/objects/:id` — карточка → «Загрузить документы»
 - `/objects/:id/upload` → пакет → `/objects/:id/packages/:packageId`
 
+## Render
+
+Демо: [https://objectsonly.onrender.com](https://objectsonly.onrender.com)  
+Blueprint: [`render.yaml`](render.yaml) (SPA rewrite + `VITE_USE_MOCKS=true`).
+
 ## Коммиты и пуш
 
 Мелкие смысловые коммиты на ветке `objects-only` (см. [docs/OBJECTS_ONLY.md](docs/OBJECTS_ONLY.md)).  

@@ -1,0 +1,18 @@
+# Blueprint для статического среза objects_only (Vite SPA + MSW mocks).
+# Сервис: https://objectsonly.onrender.com (ветка objects-only).
+services:
+  - type: web
+    name: objectsonly
+    runtime: static
+    rootDir: .
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_USE_MOCKS
+        value: "true"
+      - key: VITE_APP_NAME
+        value: ПТО-Doc
