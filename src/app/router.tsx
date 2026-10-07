@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TooltipProvider } from '@/shared'
 import { Layout } from '@/widgets'
-import { ProtectedRoute } from './ProtectedRoute'
 import { ObjectsPage } from '@/pages/objects'
 import { ObjectDetailPage } from '@/pages/object-detail'
 import { ObjectEditPage } from '@/pages/object-edit'
@@ -28,7 +27,7 @@ export function AppRouter() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Navigate to="/objects" replace />} />
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route element={<Layout />}>
               <Route path="/objects" element={<ObjectsPage />} />
               <Route path="/objects/new" element={<ObjectCreatePage />} />
               <Route path="/objects/:id" element={<ObjectDetailPage />} />

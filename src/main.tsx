@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { Providers } from './app'
+import { bootstrapMockAuth } from './app/bootstrapMockAuth'
 
 async function enableMocking() {
   // MSW Service Worker — включается, когда VITE_USE_MOCKS=true,
@@ -16,6 +17,7 @@ async function enableMocking() {
 }
 
 enableMocking().then(() => {
+  bootstrapMockAuth()
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <Providers />
