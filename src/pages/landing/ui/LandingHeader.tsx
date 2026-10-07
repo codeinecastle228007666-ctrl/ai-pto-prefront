@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { Button } from '@/shared'
 import logo from '@/assets/logo-pto-doc.jpg'
-import { LANDING_NAV_LINKS } from '../model/content'
+import { LANDING_DEMO_NAV_LINK, LANDING_NAV_LINKS } from '../model/content'
+import { isPublicDemoEnabled } from '../model/demoFlags'
 
 export function LandingHeader() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const links = LANDING_NAV_LINKS
+  const links = isPublicDemoEnabled()
+    ? [LANDING_NAV_LINKS[0]!, LANDING_DEMO_NAV_LINK, ...LANDING_NAV_LINKS.slice(1)]
+    : LANDING_NAV_LINKS
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)

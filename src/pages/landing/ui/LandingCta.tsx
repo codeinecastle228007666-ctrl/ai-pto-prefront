@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/shared'
+import { isPublicDemoEnabled } from '../model/demoFlags'
 import { Reveal } from './Reveal'
 
 /** Финальный призыв к действию. */
 export function LandingCta() {
+  const demoEnabled = isPublicDemoEnabled()
+
   return (
     <section className="bg-gradient-to-b from-white to-primary-50 py-24">
       <div className="container-main">
@@ -18,15 +21,36 @@ export function LandingCta() {
               Проверьте первый пакет документов уже сегодня
             </h2>
             <p className="relative mx-auto mt-4 max-w-xl text-lg text-primary-100">
-              Загрузите исполнительную документацию — и посмотрите, какие замечания найдёт AI, пока вы пьёте кофе.
+              {demoEnabled
+                ? 'Один бесплатный прогон без регистрации — загрузите PDF и посмотрите замечания.'
+                : 'Загрузите исполнительную документацию — и посмотрите, какие замечания найдёт AI, пока вы пьёте кофе.'}
             </p>
-            <div className="relative mt-8">
-              <Button asChild size="lg" variant="secondary" className="h-12 px-8 text-base">
-                <Link to="/login">
-                  Войти в систему
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+            <div className="relative mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              {demoEnabled ? (
+                <>
+                  <Button asChild size="lg" variant="secondary" className="h-12 px-8 text-base">
+                    <Link to="/demo">
+                      Проверить документы бесплатно
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="h-12 px-8 text-base border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                  >
+                    <Link to="/login">Войти в систему</Link>
+                  </Button>
+                </>
+              ) : (
+                <Button asChild size="lg" variant="secondary" className="h-12 px-8 text-base">
+                  <Link to="/login">
+                    Войти в систему
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         </Reveal>

@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight, Bot } from 'lucide-react'
 import { Button } from '@/shared'
+import { isPublicDemoEnabled } from '../model/demoFlags'
 import { useParallax } from '../model/useParallax'
 
 /** Hero-секция с параллаксом: несколько слоёв двигаются с разной скоростью при скролле. */
 export function LandingHero() {
   const { offset } = useParallax(900)
+  const demoEnabled = isPublicDemoEnabled()
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-primary-950 via-primary-900 to-primary-800">
@@ -67,18 +69,39 @@ export function LandingHero() {
           className="mt-10 flex flex-col items-center gap-4 sm:flex-row"
           style={{ transform: `translateY(${offset * 0.34}px)` }}
         >
-          <Button asChild size="lg" className="h-12 px-8 text-base">
-            <Link to="/login">
-              Войти в систему
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
-          <a
-            href="#how-it-works"
-            className="rounded-md px-8 py-3 text-base font-medium text-white/90 ring-1 ring-inset ring-white/30 transition hover:bg-white/10 hover:text-white"
-          >
-            Как это работает
-          </a>
+          {demoEnabled ? (
+            <>
+              <Button asChild size="lg" className="h-12 px-8 text-base">
+                <Link to="/demo">
+                  Проверить документы бесплатно
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-12 px-8 text-base border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link to="/login">Войти в систему</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button asChild size="lg" className="h-12 px-8 text-base">
+                <Link to="/login">
+                  Войти в систему
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <a
+                href="#how-it-works"
+                className="rounded-md px-8 py-3 text-base font-medium text-white/90 ring-1 ring-inset ring-white/30 transition hover:bg-white/10 hover:text-white"
+              >
+                Как это работает
+              </a>
+            </>
+          )}
         </div>
       </div>
     </section>

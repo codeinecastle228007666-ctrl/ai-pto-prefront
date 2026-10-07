@@ -1,5 +1,5 @@
 import { createColumnHelper, type ColumnDef } from '@tanstack/react-table'
-import { Archive, Eye, Pencil } from 'lucide-react'
+import { Archive, Pencil } from 'lucide-react'
 import type { ConstructionObject } from '@/entities/object'
 import { StatusBadge } from '@/entities/object'
 import {
@@ -39,7 +39,7 @@ const OBJECT_STATUS_OPTIONS = [
  * Сортировка — enableSorting, фильтры — ColumnFilterPopup в заголовках.
  */
 export function useObjectsColumns({
-  onOpenObject,
+  onOpenObject: _onOpenObject,
   onEditObject,
   onArchiveObject,
   canArchive,
@@ -48,6 +48,7 @@ export function useObjectsColumns({
   objectTypes,
   counterparties,
 }: ObjectsColumnActions): ColumnDef<ConstructionObject, any>[] {
+  void _onOpenObject
   const counterpartyOptions = counterparties.map((o) => ({ value: o.id, label: o.name }))
 
   return [
@@ -143,20 +144,6 @@ export function useObjectsColumns({
         const isArchived = row.original.status === 'archived'
         return (
           <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  aria-label="Открыть"
-                  onClick={() => onOpenObject(row.original)}
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Открыть</TooltipContent>
-            </Tooltip>
             {!isArchived && (
               <Tooltip>
                 <TooltipTrigger asChild>
