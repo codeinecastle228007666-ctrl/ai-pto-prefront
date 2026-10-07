@@ -1,32 +1,38 @@
-# React + TypeScript + Vite
+# objects_only
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Урезанный фронтенд-срез **ПТО-Doc**: только объекты, загрузка документов и просмотр пакета проверки.
 
-Currently, two official plugins are available:
+## Откуда взят
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Клон [`walleInc/ptodoc-front`](https://github.com/walleInc/ptodoc-front) ветка `main` @ `9d0f297`.
 
-## React Compiler
+Работа ведётся в ветке **`objects-only`**. Полный продукт (`ptodoc-front` / `frontend/dev`) этим срезом не трогаем.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Чем отличается от полного фронта
 
-## Expanding the Oxlint configuration
+| Полный `ptodoc-front` | Этот срез |
+| --- | --- |
+| Лендинг, логин, дашборд, профиль, сайдбар | Нет |
+| Cookie-сессия через `/login` | Auto mock-сессия при `VITE_USE_MOCKS=true` |
+| Навигация кабинета | Минимальный хедер: бренд + «Объекты» |
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Запуск
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm i
+# .env / .env.local:
+# VITE_USE_MOCKS=true
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+После старта открывать:
+
+- `/` → редирект на `/objects`
+- `/objects` — список
+- `/objects/:id` — карточка → «Загрузить документы»
+- `/objects/:id/upload` → пакет → `/objects/:id/packages/:packageId`
+
+## Коммиты и пуш
+
+Мелкие смысловые коммиты на ветке `objects-only` (см. [docs/OBJECTS_ONLY.md](docs/OBJECTS_ONLY.md)).  
+Пуш в remote — только по явной команде.
