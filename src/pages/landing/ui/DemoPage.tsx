@@ -4,7 +4,7 @@ import logo from '@/assets/logo-pto-doc.jpg'
 import { isPublicDemoEnabled } from '../model/demoFlags'
 import { PublicDemoFlow } from './PublicDemoFlow'
 
-/** Публичная страница демо-проверки (UI как кабинетная загрузка). */
+/** Публичная страница демо-проверки (UX как кабинет: upload → package workspace). */
 export function DemoPage() {
   if (!isPublicDemoEnabled()) {
     return <Navigate to="/" replace />
@@ -29,7 +29,7 @@ export function DemoPage() {
           </Link>
         </div>
       </header>
-      <main className="container-main py-8 sm:py-12">
+      <main className="px-3 py-6 sm:px-6 lg:px-8 sm:py-8">
         <PublicDemoFlow />
       </main>
     </div>

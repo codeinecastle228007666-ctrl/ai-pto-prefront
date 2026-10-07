@@ -1,31 +1,40 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Upload } from 'lucide-react'
+import { ALLOWED_MIME_TYPES } from '@/entities/package'
 import { UploadDropzone, UploadFileList, type UploadItem } from '@/features/upload'
 import { Alert, AlertDescription, Button, Card, CardContent, CardHeader } from '@/shared'
 import { runPublicDemoCheck, type DemoCheckResult } from '../model/demoApi'
 import { hasUsedPublicDemo, markPublicDemoUsed } from '../model/demoSession'
-import { DemoProgress } from './DemoProgress'
-import { DemoResult } from './DemoResult'
 import { DemoLeadModal } from './DemoLeadModal'
+import { DemoPackageWorkspace } from './DemoPackageWorkspace'
 
 const DEMO_MAX_FILES = 5
-const DEMO_MAX_MB = 20
-const DEMO_MAX_BYTES = DEMO_MAX_MB * 1024 * 1024
 
-type Phase = 'upload' | 'progress' | 'result'
+type Phase = 'upload' | 'processing' | 'result'
+
+const PHASE_LABEL = {
+  idle: '',
+  preparing: 'Подготовка пакета…',
+  uploading: 'Загрузка файлов…',
+  starting: 'Запуск обработки…',
+} as const
+
+type BusyPhase = keyof typeof PHASE_LABEL
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function isPdf(file: File) {
-  return file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+function isAllowed(file: File): boolean {
+  return (ALLOWED_MIME_TYPES as readonly string[]).includes(file.type)
 }
 
-/** Публичное демо: UI как кабинетная загрузка документов. */
+/** Публичное демо: UX как UploadPage → PackagePage. */
 export function PublicDemoFlow() {
   const [files, setFiles] = useState<File[]>([])
   const [phase, setPhase] = useState<Phase>('upload')
-  const [stageIndex, setStageIndex] = useState(0)
+  const [busyLabel, setBusyLabel] = useState<BusyPhase>('idle')
+  const [progress, setProgress] = useState<number | undefined>()
   const [result, setResult] = useState<DemoCheckResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [rejected, setRejected] = useState<string[]>([])
@@ -48,31 +57,20 @@ export function PublicDemoFlow() {
   )
 
   const openLead = () => setLeadOpen(true)
-
-  const resetToUpload = () => {
-    setFiles([])
-    setRejected([])
-    setPhase('upload')
-    setStageIndex(0)
-    setResult(null)
-    setError(null)
-  }
+  const busy = busyLabel !== 'idle'
 
   const addFiles = (incoming: File[]) => {
+    if (busy || phase !== 'upload' || used) return
     setError(null)
     const next = [...files]
     const fails: string[] = []
     for (const file of incoming) {
       if (next.length >= DEMO_MAX_FILES) {
-        fails.push(`Не больше ${DEMO_MAX_FILES} файлов`)
+        fails.push(`Не больше ${DEMO_MAX_FILES} файлов в демо`)
         break
       }
-      if (!isPdf(file)) {
-        fails.push(`«${file.name}»: нужен PDF`)
-        continue
-      }
-      if (file.size > DEMO_MAX_BYTES) {
-        fails.push(`«${file.name}»: больше ${DEMO_MAX_MB} МБ`)
+      if (!isAllowed(file)) {
+        fails.push(`«${file.name}»: формат не поддерживается (PDF, DOCX, XLSX, CSV)`)
         continue
       }
       if (next.some((f) => f.name === file.name && f.size === file.size)) continue
@@ -83,6 +81,7 @@ export function PublicDemoFlow() {
   }
 
   const removeAt = (id: string) => {
+    if (busy) return
     const index = items.findIndex((i) => i.id === id)
     if (index < 0) return
     setFiles((prev) => prev.filter((_, i) => i !== index))
@@ -95,39 +94,66 @@ export function PublicDemoFlow() {
       return
     }
     if (files.length === 0) {
-      setError('Добавьте хотя бы один PDF')
+      setError('Добавьте хотя бы один файл')
       return
     }
 
-    setPhase('progress')
-    setStageIndex(0)
-    const apiPromise = runPublicDemoCheck(files)
-    await sleep(700)
-    setStageIndex(1)
-    await sleep(700)
-    setStageIndex(2)
-    const checkResult = await apiPromise
+    setBusyLabel('preparing')
+    await sleep(400)
+    setBusyLabel('uploading')
     await sleep(500)
-    setStageIndex(3)
+    setBusyLabel('starting')
+
+    const apiPromise = runPublicDemoCheck(files)
+    setPhase('processing')
+    setProgress(12)
+    setBusyLabel('idle')
+
+    const tick = window.setInterval(() => {
+      setProgress((p) => {
+        if (p === undefined || p >= 90) return p
+        return p + 8
+      })
+    }, 280)
+
+    const checkResult = await apiPromise
+    window.clearInterval(tick)
+    setProgress(100)
+    await sleep(350)
     setResult(checkResult)
     markPublicDemoUsed()
     setUsed(true)
+    setProgress(undefined)
     setPhase('result')
   }
 
+  if (phase === 'processing' || (phase === 'result' && result)) {
+    return (
+      <div className="space-y-4">
+        <DemoPackageWorkspace
+          files={files}
+          result={result ?? { findings: [], disclaimer: '', mock: true }}
+          progress={phase === 'processing' ? progress : undefined}
+          onLead={openLead}
+        />
+        <DemoLeadModal open={leadOpen} onOpenChange={setLeadOpen} />
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
-      {phase === 'upload' && used && (
+    <div className="mx-auto max-w-3xl space-y-6">
+      {used ? (
         <Card>
           <CardHeader>
-            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Публичное демо</h1>
-            <p className="text-sm text-gray-500">Один бесплатный прогон без регистрации</p>
+            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Загрузка документов</h1>
+            <p className="text-sm text-gray-500">Демо · без регистрации</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <Alert>
               <AlertDescription>
-                Бесплатный прогон в этом браузере уже использован. Оставьте заявку, чтобы проверить
-                ещё раз или сохранить результат в объект.
+                Бесплатный прогон в этом браузере уже использован. Оставьте заявку, чтобы проверить ещё
+                раз или сохранить результат в объект.
               </AlertDescription>
             </Alert>
             <Button type="button" onClick={openLead}>
@@ -135,22 +161,14 @@ export function PublicDemoFlow() {
             </Button>
           </CardContent>
         </Card>
-      )}
-
-      {phase === 'upload' && !used && (
+      ) : (
         <Card>
           <CardHeader>
             <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Загрузка документов</h1>
-            <p className="text-sm text-gray-500">
-              Демо-проверка · до {DEMO_MAX_FILES} PDF · до {DEMO_MAX_MB} МБ каждый
-            </p>
+            <p className="text-sm text-gray-500">Демо · без регистрации</p>
           </CardHeader>
           <CardContent className="space-y-4">
-            <UploadDropzone
-              onFiles={addFiles}
-              accept=".pdf,application/pdf"
-              hint={`Только PDF · до ${DEMO_MAX_FILES} файлов · до ${DEMO_MAX_MB} МБ каждый`}
-            />
+            <UploadDropzone onFiles={addFiles} disabled={busy} />
 
             {rejected.length > 0 && (
               <Alert variant="destructive">
@@ -164,7 +182,7 @@ export function PublicDemoFlow() {
               </Alert>
             )}
 
-            {items.length > 0 && <UploadFileList items={items} onRemove={removeAt} />}
+            {items.length > 0 && <UploadFileList items={items} onRemove={busy ? undefined : removeAt} />}
 
             {error && (
               <Alert variant="destructive">
@@ -172,39 +190,17 @@ export function PublicDemoFlow() {
               </Alert>
             )}
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-gray-500">Файлов: {files.length}</p>
-              <Button type="button" onClick={handleSubmit} disabled={files.length === 0}>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-gray-500">
+                {busy ? PHASE_LABEL[busyLabel] : `Файлов: ${items.length}`}
+              </p>
+              <Button onClick={handleSubmit} disabled={items.length === 0 || busy} loading={busy}>
+                <Upload className="h-4 w-4 mr-2" />
                 Загрузить и проверить
               </Button>
             </div>
           </CardContent>
         </Card>
-      )}
-
-      {phase === 'progress' && (
-        <Card>
-          <CardHeader>
-            <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Проверка</h1>
-            <p className="text-sm text-gray-500">Готовим отчёт по вашим файлам…</p>
-          </CardHeader>
-          <CardContent>
-            <DemoProgress activeIndex={stageIndex} />
-          </CardContent>
-        </Card>
-      )}
-
-      {phase === 'result' && result && (
-        <div className="space-y-4">
-          <DemoResult result={result} onAgain={openLead} onSave={openLead} />
-          <button
-            type="button"
-            className="text-sm text-gray-500 underline underline-offset-2 hover:text-gray-800"
-            onClick={resetToUpload}
-          >
-            Вернуться к загрузке
-          </button>
-        </div>
       )}
 
       <DemoLeadModal open={leadOpen} onOpenChange={setLeadOpen} />
