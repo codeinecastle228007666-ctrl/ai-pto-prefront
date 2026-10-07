@@ -5,7 +5,6 @@ import { TooltipProvider } from '@/shared'
 import { Layout } from '@/widgets'
 import { ProtectedRoute } from './ProtectedRoute'
 import { LoginPage } from '@/pages/login'
-import { DashboardPage } from '@/pages/dashboard'
 import { ObjectsPage } from '@/pages/objects'
 import { ObjectDetailPage } from '@/pages/object-detail'
 import { ObjectEditPage } from '@/pages/object-edit'
@@ -32,7 +31,6 @@ export function AppRouter() {
             <Route path="/" element={<Navigate to="/objects" replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/objects" element={<ObjectsPage />} />
               <Route path="/objects/new" element={<ObjectCreatePage />} />
               <Route path="/objects/:id" element={<ObjectDetailPage />} />
