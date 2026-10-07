@@ -29,7 +29,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// 401 без живой cookie-сессии → на логин (кроме самого login/me)
+// 401 без живой сессии: сброс мок-сессии, остаёмся в кабинете (/objects)
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
@@ -37,9 +37,11 @@ api.interceptors.response.use(
     const url = error.config?.url ?? ''
     const isAuthEndpoint = url.includes('/auth/login') || url.includes('/auth/me')
 
-    if (status === 401 && !isAuthEndpoint && !window.location.pathname.startsWith('/login')) {
+    if (status === 401 && !isAuthEndpoint) {
       if (isMockMode()) clearMockSessionId()
-      window.location.href = '/login'
+      if (!window.location.pathname.startsWith('/objects')) {
+        window.location.href = '/objects'
+      }
     }
 
     return Promise.reject(error)
