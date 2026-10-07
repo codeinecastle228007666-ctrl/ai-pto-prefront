@@ -3,7 +3,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TooltipProvider } from '@/shared'
 import { Layout } from '@/widgets'
-import { useAuthStore } from '@/features/auth'
 import { ProtectedRoute } from './ProtectedRoute'
 import { LoginPage } from '@/pages/login'
 import { DashboardPage } from '@/pages/dashboard'
@@ -14,7 +13,6 @@ import { ObjectCreatePage } from '@/pages/object-new'
 import { UploadPage } from '@/pages/upload'
 import { PackagePage } from '@/pages/package'
 import { ProfilePage } from '@/pages/profile'
-import { LandingPage } from '@/pages/landing'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,25 +24,13 @@ const queryClient = new QueryClient({
   },
 })
 
-/**
- * Корень сайта: неавторизованным — лендинг, авторизованным — сразу кабинет.
- * Важно: индексный маршрут внутри защищённой группы убран, иначе он перебивает
- * этот маршрут по рангу react-router и «/» всегда редиректил в кабинет.
- */
-function LandingRoute() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
-
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />
-  return <LandingPage />
-}
-
 export function AppRouter() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<LandingRoute />} />
+            <Route path="/" element={<Navigate to="/objects" replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<DashboardPage />} />
@@ -56,7 +42,7 @@ export function AppRouter() {
               <Route path="/objects/:id/packages/:packageId" element={<PackagePage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to="/objects" replace />} />
           </Routes>
         </BrowserRouter>
         <ReactQueryDevtools initialIsOpen={false} />
