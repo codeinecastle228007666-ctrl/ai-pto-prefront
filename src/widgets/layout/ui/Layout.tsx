@@ -1,56 +1,15 @@
-import { useEffect, useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
-import { X } from 'lucide-react'
-import { Sheet, SheetContent, Button } from '@/shared'
-import { Sidebar } from '@/widgets/sidebar'
+import { Outlet } from 'react-router-dom'
 import { Header } from '@/widgets/header'
-import logo from '@/assets/logo-pto-doc.jpg'
 
 export function Layout() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const location = useLocation()
-
-  // Закрывать мобильное меню при смене маршрута
-  useEffect(() => {
-    setMobileOpen(false)
-  }, [location.pathname])
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed((prev) => !prev)} />
-      <div
-        className={
-          sidebarCollapsed
-            ? 'lg:pl-20 flex flex-col min-h-screen min-w-0 transition-[padding] duration-300'
-            : 'lg:pl-64 flex flex-col min-h-screen min-w-0 transition-[padding] duration-300'
-        }
-      >
-        <Header onMenuClick={() => setMobileOpen(true)} />
+      <div className="flex flex-col min-h-screen min-w-0">
+        <Header />
         <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
-
-      {/* Мобильный сайдбар (оверлей, только < lg) */}
-      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" hideClose className="w-[min(100%,16rem)] p-0 sm:w-64">
-          <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4 border-b border-gray-200">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm">
-                <img src={logo} alt="" className="h-full w-full scale-125 object-cover" />
-              </span>
-              <span className="text-lg sm:text-xl font-bold text-primary-600 truncate">ПТО-Doc</span>
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} aria-label="Закрыть меню">
-              <X className="h-5 w-5" />
-            </Button>
-          </div>
-          <div className="h-[calc(100%-3.5rem)] sm:h-[calc(100%-4rem)]">
-            <Sidebar embedded collapsed={false} />
-          </div>
-        </SheetContent>
-      </Sheet>
     </div>
   )
 }
