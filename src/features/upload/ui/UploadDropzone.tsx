@@ -5,11 +5,20 @@ import { cn } from '@/shared'
 interface UploadDropzoneProps {
   onFiles: (files: File[]) => void
   disabled?: boolean
+  /** MIME / extensions for input accept, e.g. ".pdf,application/pdf" */
+  accept?: string
+  hint?: string
 }
 
-const INPUT_ACCEPT = '.pdf,.docx,.xlsx,.csv'
+const DEFAULT_ACCEPT = '.pdf,.docx,.xlsx,.csv'
+const DEFAULT_HINT = 'PDF, DOCX, XLSX, CSV · до 200 файлов в пакете · сканы не поддерживаются'
 
-export function UploadDropzone({ onFiles, disabled }: UploadDropzoneProps) {
+export function UploadDropzone({
+  onFiles,
+  disabled,
+  accept = DEFAULT_ACCEPT,
+  hint = DEFAULT_HINT,
+}: UploadDropzoneProps) {
   // Формат проверяем сами в useUploadQueue, чтобы показать причину отказа по каждому файлу
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (accepted, rejections) => onFiles([...accepted, ...rejections.map((r) => r.file)]),
@@ -25,12 +34,12 @@ export function UploadDropzone({ onFiles, disabled }: UploadDropzoneProps) {
         disabled && 'pointer-events-none opacity-50'
       )}
     >
-      <input {...getInputProps({ accept: INPUT_ACCEPT })} />
+      <input {...getInputProps({ accept })} />
       <UploadCloud className="h-10 w-10 text-gray-400" />
       <p className="text-sm font-medium text-gray-900">
         {isDragActive ? 'Отпустите файлы здесь' : 'Перетащите файлы или нажмите для выбора'}
       </p>
-      <p className="text-xs text-gray-500">PDF, DOCX, XLSX, CSV · до 200 файлов в пакете · сканы не поддерживаются</p>
+      <p className="text-xs text-gray-500">{hint}</p>
     </div>
   )
 }

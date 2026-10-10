@@ -14,7 +14,7 @@ import { ObjectCreatePage } from '@/pages/object-new'
 import { UploadPage } from '@/pages/upload'
 import { PackagePage } from '@/pages/package'
 import { ProfilePage } from '@/pages/profile'
-import { LandingPage } from '@/pages/landing'
+import { LandingPage, DemoPage } from '@/pages/landing'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +45,7 @@ export function AppRouter() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingRoute />} />
+            <Route path="/demo" element={<DemoPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<DashboardPage />} />

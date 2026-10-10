@@ -21,6 +21,9 @@ export const LANDING_NAV_LINKS = [
   { label: 'Связаться', href: '#contact' },
 ]
 
+/** Ссылка на публичное демо — в шапке при VITE_PUBLIC_DEMO_ENABLED. */
+export const LANDING_DEMO_NAV_LINK = { label: 'Демо', href: '/demo' }
+
 /** Карточки возможностей — по спецификации API (openapi.yaml). */
 export const LANDING_FEATURES = [
   {

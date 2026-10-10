@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import type { AxiosError } from 'axios'
-import { ArrowLeft, Edit, Archive, Loader2, Upload } from 'lucide-react'
+import { ArrowLeft, Archive, Edit, Loader2, MoreHorizontal, Upload } from 'lucide-react'
 import {
   useObject,
   useArchiveObject,
@@ -11,7 +11,21 @@ import {
 } from '@/features/objects'
 import { useIsOwner } from '@/features/auth'
 import { StatusBadge } from '@/entities/object'
-import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, ConfirmDialog } from '@/shared'
+import {
+  Alert,
+  AlertDescription,
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  ConfirmDialog,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/shared'
 import { ObjectInfoGrid } from './ObjectInfoGrid'
 import { ObjectStatsCard } from './ObjectStatsCard'
 
@@ -70,50 +84,6 @@ export function ObjectDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => navigate('/objects')}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Назад
-        </Button>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          {transitions.map((t) => (
-            <Button
-              key={t.to}
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-auto"
-              onClick={() => handleStatus(t.to)}
-              disabled={statusMutation.isPending}
-            >
-              {t.label}
-            </Button>
-          ))}
-          {isOwner && !isArchived && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-auto text-red-600 hover:text-red-700"
-              onClick={() => setShowArchiveDialog(true)}
-            >
-              <Archive className="h-4 w-4 mr-2" />
-              Архивировать
-            </Button>
-          )}
-          {!isArchived && (
-            <Button size="sm" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${object.id}/upload`)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Загрузить документы
-            </Button>
-          )}
-          {!isArchived && (
-            <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => navigate(`/objects/${object.id}/edit`)}>
-              <Edit className="h-4 w-4 mr-2" />
-              Изменить
-            </Button>
-          )}
-        </div>
-      </div>
-
       {actionError && (
         <Alert variant="destructive">
           <AlertDescription>{actionError}</AlertDescription>
@@ -127,11 +97,64 @@ export function ObjectDetailPage() {
       )}
 
       <Card>
-        <CardHeader>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl break-words">{object.name}</h1>
-          <div className="flex flex-wrap items-center gap-2 mt-2 sm:gap-3">
-            <Badge variant="outline">{object.code}</Badge>
-            <StatusBadge status={object.status} />
+        <CardHeader className="space-y-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-2">
+              <h1 className="text-xl font-bold text-gray-900 sm:text-2xl break-words">{object.name}</h1>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <Badge variant="outline">{object.code}</Badge>
+                <StatusBadge status={object.status} />
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 self-end sm:self-start">
+              {!isArchived && (
+                <Button size="sm" onClick={() => navigate(`/objects/${object.id}/upload`)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Загрузить документы
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Действия">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem onClick={() => navigate('/objects')}>
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    К списку
+                  </DropdownMenuItem>
+                  {!isArchived && (
+                    <DropdownMenuItem onClick={() => navigate(`/objects/${object.id}/edit`)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Изменить
+                    </DropdownMenuItem>
+                  )}
+                  {transitions.length > 0 && <DropdownMenuSeparator />}
+                  {transitions.map((t) => (
+                    <DropdownMenuItem
+                      key={t.to}
+                      disabled={statusMutation.isPending}
+                      onClick={() => handleStatus(t.to)}
+                    >
+                      {t.label}
+                    </DropdownMenuItem>
+                  ))}
+                  {isOwner && !isArchived && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600 focus:text-red-600"
+                        onClick={() => setShowArchiveDialog(true)}
+                      >
+                        <Archive className="h-4 w-4 mr-2" />
+                        Архивировать
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

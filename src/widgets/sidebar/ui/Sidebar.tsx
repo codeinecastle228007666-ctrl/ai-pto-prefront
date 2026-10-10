@@ -1,7 +1,7 @@
-import { LayoutDashboard, FolderKanban, User as UserIcon, Settings, LogOut, User, ChevronsUpDown, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, User as UserIcon, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuthStore, useLogout } from '@/features/auth'
-import { Avatar, AvatarFallback, Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, Tooltip, TooltipContent, TooltipTrigger, cn } from '@/shared'
+import { useAuthStore } from '@/features/auth'
+import { Button, Tooltip, TooltipContent, TooltipTrigger, cn } from '@/shared'
 import logo from '@/assets/logo-pto-doc.jpg'
 
 const navigation = [
@@ -19,11 +19,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed = false, embedded = false, onToggle }: SidebarProps) {
-  const user = useAuthStore((state) => state.user)
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const navigate = useNavigate()
   const location = useLocation()
-  const logoutMutation = useLogout()
 
   if (!isAuthenticated) return null
 
@@ -113,56 +111,6 @@ export function Sidebar({ collapsed = false, embedded = false, onToggle }: Sideb
           )
         })}
       </nav>
-      <div className={cn('border-t border-gray-200', collapsed ? 'p-2' : 'p-4')}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            {collapsed ? (
-              <Button variant="ghost" className="w-full justify-center p-0 h-10" aria-label="Меню пользователя">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary-600 text-white">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            ) : (
-              <Button variant="ghost" className="w-full justify-start gap-3 h-auto py-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary-600 text-white">
-                    {user?.name?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="text-left flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{user?.name || 'Пользователь'}</p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email || ''}</p>
-                </div>
-                <ChevronsUpDown className="h-4 w-4 flex-shrink-0 text-gray-400" />
-              </Button>
-            )}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            side={collapsed ? 'right' : 'bottom'}
-            align={collapsed ? 'start' : 'end'}
-            className="w-56"
-          >
-            <DropdownMenuItem className="px-3 py-1.5 text-sm cursor-pointer" onClick={() => navigate('/profile')}>
-              <User className="h-4 w-4 mr-2" />
-              Профиль
-            </DropdownMenuItem>
-            <DropdownMenuItem className="px-3 py-1.5 text-sm cursor-pointer" onClick={() => navigate('/profile')}>
-              <Settings className="h-4 w-4 mr-2" />
-              Настройки
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="px-3 py-1.5 text-sm text-red-600 focus:text-red-600 cursor-pointer"
-              onClick={() => logoutMutation.mutate()}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Выйти
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
     </aside>
   )
 }
